@@ -1,0 +1,667 @@
+{
+  "Application": {
+    "Screens": [
+      {
+        "Name": "audioRecorder",
+        "Components": [
+          {
+            "Type": "Image",
+            "Name": "image1",
+            "Width": 480,
+            "Height": 272,
+            "RelativeFilename": "__generated\\clay_theme_images_backgrounds_480x272_waves.png"
+          },
+          {
+            "Type": "ButtonWithIcon",
+            "Name": "startRecordButton",
+            "X": 30,
+            "Y": 20,
+            "Width": 128,
+            "Height": 116,
+            "Pressed": "__generated\\clay_theme_images_widgets_button_icon_round_tiny_fill_pressed.png",
+            "Released": "__generated\\clay_theme_images_widgets_button_icon_round_tiny_fill_normal.png",
+            "IconPressed": "__generated\\icon_theme_images_action_done_50_50_E8F6FB.svg.png",
+            "IconReleased": "__generated\\icon_theme_images_av_play_arrow_50_50_E8F6FB.svg.png",
+            "IconX": 42,
+            "IconY": 35,
+            "IconHeight": 50,
+            "IconWidth": 50,
+            "Preset": "clay_theme\\presets\\button\\icon\\round\\tiny_fill_normal.json"
+          },
+          {
+            "Type": "ButtonWithIcon",
+            "Name": "stopRecordButton",
+            "X": 158,
+            "Y": 20,
+            "Width": 128,
+            "Height": 116,
+            "Pressed": "__generated\\clay_theme_images_widgets_button_icon_round_tiny_fill_pressed.png",
+            "Released": "__generated\\clay_theme_images_widgets_button_icon_round_tiny_fill_normal.png",
+            "IconPressed": "__generated\\icon_theme_images_action_done_50_50_E8F6FB.svg.png",
+            "IconReleased": "__generated\\icon_theme_images_av_stop_circle_50_50_E8F6FB.svg.png",
+            "IconX": 41,
+            "IconY": 33,
+            "IconHeight": 50,
+            "IconWidth": 50,
+            "Preset": "clay_theme\\presets\\button\\icon\\round\\tiny_fill_normal.json"
+          },
+          {
+            "Type": "ButtonWithIcon",
+            "Name": "saveButton",
+            "X": 94,
+            "Y": 128,
+            "Width": 128,
+            "Height": 116,
+            "Pressed": "__generated\\clay_theme_images_widgets_button_icon_round_tiny_fill_pressed.png",
+            "Released": "__generated\\clay_theme_images_widgets_button_icon_round_tiny_fill_normal.png",
+            "IconPressed": "__generated\\icon_theme_images_action_done_50_50_E8F6FB.svg.png",
+            "IconReleased": "__generated\\icon_theme_images_content_save_50_50_E8F6FB.svg.png",
+            "IconX": 43,
+            "IconY": 33,
+            "IconHeight": 50,
+            "IconWidth": 50,
+            "Preset": "clay_theme\\presets\\button\\icon\\round\\tiny_fill_normal.json"
+          },
+          {
+            "Type": "Image",
+            "Name": "image2",
+            "X": 274,
+            "Y": 39,
+            "Width": 206,
+            "Height": 194,
+            "RelativeFilename": "__generated\\clay_theme_images_widgets_button_icon_rounded_medium_fill_normal.png",
+            "Clickable": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "textArea1",
+            "X": 323,
+            "Y": 149,
+            "Width": 108,
+            "Height": 29,
+            "TextId": "__SingleUse_N3C9",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 119,
+              "Green": 168,
+              "Blue": 212
+            },
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "TestText",
+              "UseBuffer": true,
+              "BufferSize": 15
+            }
+          },
+          {
+            "Type": "TextArea",
+            "Name": "textArea2",
+            "X": 337,
+            "Y": 93,
+            "Width": 81,
+            "Height": 35,
+            "TextId": "__SingleUse_VC3R",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 71,
+              "Green": 101,
+              "Blue": 122
+            },
+            "AutoSize": true
+          }
+        ],
+        "Interactions": [
+          {
+            "InteractionName": "startRecordInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "startRecordButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "startRecord"
+            }
+          },
+          {
+            "InteractionName": "stopRecordInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "stopRecordButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "stopRecord"
+            }
+          },
+          {
+            "InteractionName": "startSavingInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "saveButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "startSaving"
+            }
+          }
+        ]
+      },
+      {
+        "Name": "audioPlayer",
+        "Components": [
+          {
+            "Type": "Image",
+            "Name": "image1",
+            "Width": 480,
+            "Height": 272,
+            "RelativeFilename": "__generated\\clay_theme_images_backgrounds_480x272_burly.png"
+          },
+          {
+            "Type": "Image",
+            "Name": "image2",
+            "X": 108,
+            "Y": -13,
+            "Width": 264,
+            "Height": 80,
+            "RelativeFilename": "__generated\\clay_theme_images_widgets_button_regular_height_36_medium_round_normal.png"
+          },
+          {
+            "Type": "Slider",
+            "Name": "VolumeSlider",
+            "X": 424,
+            "Y": 10,
+            "Width": 56,
+            "Height": 231,
+            "BackgroundUnselected": "clay_theme_slider.png",
+            "BackgroundSelected": "clay_theme_slider_light.png",
+            "Indicator": "__generated\\clay_theme_images_widgets_slider_vertical_thick_rounded_dark.png",
+            "BackgroundX": 22,
+            "BackgroundY": 24,
+            "IndicatorMax": 179,
+            "ValueMax": 100,
+            "InitValue": 88
+          },
+          {
+            "Type": "TextArea",
+            "Name": "volumeText",
+            "X": 415,
+            "Y": 238,
+            "Width": 57,
+            "Height": 29,
+            "TextId": "__SingleUse_MD5H",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "volumeValue",
+              "UseBuffer": true,
+              "BufferSize": 4
+            }
+          },
+          {
+            "Type": "TextArea",
+            "Name": "titleText",
+            "X": 173,
+            "Y": 10,
+            "Width": 135,
+            "Height": 35,
+            "TextId": "__SingleUse_RJSE",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 71,
+              "Green": 101,
+              "Blue": 122
+            },
+            "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "fileSizeText",
+            "X": 59,
+            "Y": 105,
+            "Width": 120,
+            "Height": 18,
+            "TextId": "__SingleUse_Z5TA",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "fileSizeCard",
+              "UseBuffer": true,
+              "BufferSize": 6
+            }
+          },
+          {
+            "Type": "TextArea",
+            "Name": "sampleRateText",
+            "X": 183,
+            "Y": 105,
+            "Width": 88,
+            "Height": 18,
+            "TextId": "__SingleUse_IV1Y",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "sampleRateCard",
+              "UseBuffer": true,
+              "BufferSize": 6
+            }
+          },
+          {
+            "Type": "TextArea",
+            "Name": "errorText",
+            "X": 59,
+            "Y": 42,
+            "Width": 120,
+            "Height": 29,
+            "TextId": "__SingleUse_JRN6",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 255
+            },
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "errorTextCard",
+              "UseBuffer": true,
+              "BufferSize": 16
+            }
+          },
+          {
+            "Type": "Button",
+            "Name": "fileSelectButton",
+            "X": 33,
+            "Y": 45,
+            "Width": 264,
+            "Height": 80,
+            "Pressed": "__generated\\clay_theme_images_widgets_button_regular_height_36_medium_rounded_pressed.png",
+            "Released": "__generated\\clay_theme_images_widgets_button_regular_height_36_medium_rounded_normal.png",
+            "Preset": "clay_theme\\presets\\button\\regular\\height_36\\medium_rounded_normal.json"
+          },
+          {
+            "Type": "TextArea",
+            "Name": "nowFileText",
+            "X": 63,
+            "Y": 71,
+            "Width": 207,
+            "Height": 29,
+            "TextId": "__SingleUse_FW2C",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 116,
+              "Green": 194,
+              "Blue": 219
+            },
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "fileName",
+              "UseBuffer": true,
+              "BufferSize": 34
+            }
+          },
+          {
+            "Type": "ButtonWithLabel",
+            "Name": "playButton",
+            "X": 33,
+            "Y": 112,
+            "Width": 150,
+            "Height": 80,
+            "Pressed": "__generated\\clay_theme_images_widgets_button_regular_height_36_tiny_rounded_pressed.png",
+            "Released": "__generated\\clay_theme_images_widgets_button_regular_height_36_tiny_rounded_normal.png",
+            "TextId": "__SingleUse_RAE4",
+            "ReleasedColor": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            },
+            "PressedColor": {
+              "Red": 155,
+              "Green": 204,
+              "Blue": 224
+            },
+            "TextRotation": "0",
+            "Preset": "clay_theme\\presets\\button\\regular\\height_36\\tiny_rounded_normal.json"
+          },
+          {
+            "Type": "ButtonWithLabel",
+            "Name": "pauseButton",
+            "X": 152,
+            "Y": 112,
+            "Width": 150,
+            "Height": 80,
+            "Pressed": "__generated\\clay_theme_images_widgets_button_regular_height_36_tiny_rounded_pressed.png",
+            "Released": "__generated\\clay_theme_images_widgets_button_regular_height_36_tiny_rounded_normal.png",
+            "TextId": "__SingleUse_XNVG",
+            "ReleasedColor": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            },
+            "PressedColor": {
+              "Red": 155,
+              "Green": 204,
+              "Blue": 224
+            },
+            "TextRotation": "0",
+            "Preset": "clay_theme\\presets\\button\\regular\\height_36\\tiny_rounded_normal.json"
+          },
+          {
+            "Type": "ButtonWithLabel",
+            "Name": "stopButton",
+            "X": 271,
+            "Y": 45,
+            "Width": 150,
+            "Height": 80,
+            "Pressed": "__generated\\clay_theme_images_widgets_button_regular_height_36_tiny_rounded_pressed.png",
+            "Released": "__generated\\clay_theme_images_widgets_button_regular_height_36_tiny_rounded_normal.png",
+            "TextId": "__SingleUse_VPHE",
+            "ReleasedColor": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            },
+            "PressedColor": {
+              "Red": 155,
+              "Green": 204,
+              "Blue": 224
+            },
+            "TextRotation": "0",
+            "Preset": "clay_theme\\presets\\button\\regular\\height_36\\tiny_rounded_normal.json"
+          },
+          {
+            "Type": "ButtonWithLabel",
+            "Name": "muteButton",
+            "X": 270,
+            "Y": 112,
+            "Width": 150,
+            "Height": 80,
+            "Pressed": "__generated\\clay_theme_images_widgets_button_regular_height_36_tiny_rounded_pressed.png",
+            "Released": "__generated\\clay_theme_images_widgets_button_regular_height_36_tiny_rounded_normal.png",
+            "TextId": "__SingleUse_25RI",
+            "ReleasedColor": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            },
+            "PressedColor": {
+              "Red": 155,
+              "Green": 204,
+              "Blue": 224
+            },
+            "TextRotation": "0",
+            "Preset": "clay_theme\\presets\\button\\regular\\height_36\\tiny_rounded_normal.json"
+          },
+          {
+            "Type": "ScrollableContainer",
+            "Name": "waveFileList",
+            "X": 59,
+            "Y": 105,
+            "Width": 212,
+            "Height": 145,
+            "VerticalScrollEnabled": true,
+            "ScrollbarsVisibleOnPressed": true,
+            "ScrollbarsAlpha": 255,
+            "Components": [
+              {
+                "Type": "ListLayout",
+                "Name": "fileList",
+                "Width": 250,
+                "Height": 250,
+                "Direction": "South",
+                "Components": []
+              }
+            ]
+          }
+        ],
+        "Interactions": [
+          {
+            "InteractionName": "volumeValueChanged",
+            "Trigger": {
+              "Type": "TriggerSliderValueChanged",
+              "TriggerComponent": "VolumeSlider"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "volumeChanged"
+            }
+          },
+          {
+            "InteractionName": "muteInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "muteButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "muteFunction"
+            }
+          },
+          {
+            "InteractionName": "displayFileListInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "fileSelectButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "disFileList"
+            }
+          },
+          {
+            "InteractionName": "playInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "playButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "playFunction"
+            }
+          },
+          {
+            "InteractionName": "pauseInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "pauseButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "pauseFunction"
+            }
+          },
+          {
+            "InteractionName": "stopInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "stopButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "stopFunction"
+            }
+          }
+        ]
+      },
+      {
+        "Name": "fatFSTester",
+        "Components": [
+          {
+            "Type": "Box",
+            "Name": "box1",
+            "Width": 480,
+            "Height": 272,
+            "Color": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            }
+          },
+          {
+            "Type": "TextArea",
+            "Name": "firstFileText",
+            "X": 72,
+            "Y": 89,
+            "Width": 206,
+            "Height": 24,
+            "TextId": "__SingleUse_7XNW",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "__SingleUse_DU0S",
+              "UseBuffer": true,
+              "BufferSize": 20
+            }
+          },
+          {
+            "Type": "TextArea",
+            "Name": "fileNumText",
+            "X": 72,
+            "Y": 136,
+            "Width": 90,
+            "Height": 24,
+            "TextId": "__SingleUse_L2CQ",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 3
+            }
+          }
+        ],
+        "Interactions": []
+      }
+    ],
+    "CustomContainerDefinitions": [
+      {
+        "Name": "WavFileElement",
+        "Width": 214,
+        "Height": 37,
+        "Components": [
+          {
+            "Type": "Box",
+            "Name": "background",
+            "Width": 214,
+            "Height": 37,
+            "Color": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            }
+          },
+          {
+            "Type": "Image",
+            "Name": "itemframe",
+            "X": -25,
+            "Y": -22,
+            "Width": 264,
+            "Height": 80,
+            "RelativeFilename": "__generated\\clay_theme_images_widgets_button_regular_height_36_medium_rounded_inactive.png"
+          },
+          {
+            "Type": "TextArea",
+            "Name": "fileNameText",
+            "X": 7,
+            "Y": 6,
+            "Width": 167,
+            "Height": 29,
+            "TextId": "__SingleUse_G92X",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "fileName",
+              "UseBuffer": true,
+              "BufferSize": 34
+            }
+          },
+          {
+            "Type": "Button",
+            "Name": "fileSelectButton",
+            "Y": 1,
+            "Width": 214,
+            "Height": 36,
+            "Pressed": "__generated\\alternate_theme_images_widgets_button_regular_height_36_medium_rounded_pressed.png",
+            "Released": "__generated\\alternate_theme_images_widgets_button_regular_height_36_medium_rounded_normal.png",
+            "Alpha": 22,
+            "Preset": "alternate_theme\\presets\\button\\regular\\height_36\\medium_rounded_normal.json"
+          }
+        ],
+        "Interactions": [
+          {
+            "InteractionName": "selectInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "fileSelectButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "selectAction"
+            }
+          }
+        ]
+      }
+    ],
+    "Name": "AISpeaker",
+    "Resolution": {
+      "Width": 480,
+      "Height": 272
+    },
+    "SelectedColorDepth": 16,
+    "StartupScreenName": "audioRecorder",
+    "SelectedStartupLanguage": "GB",
+    "TouchGfxPath": "../Middlewares/ST/touchgfx",
+    "UIPath": ".",
+    "AvailableColorDepths": [
+      16
+    ],
+    "AvailableLCDs": {
+      "16": "LCD16bpp"
+    },
+    "AvailableSections": [
+      "ExtFlashSection",
+      "IntFlashSection"
+    ],
+    "AvailableResolutions": [
+      {
+        "Width": 480,
+        "Height": 272
+      }
+    ],
+    "PhysicalButtons": [],
+    "FrameworkFeatures": {
+      "LCD16bpp": {
+        "Id": "LCD16bpp",
+        "Features": [
+          {
+            "Id": "TextureMapperImageFormats",
+            "Features": [
+              {
+                "Id": "RGB565",
+                "IsEnabled": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "GenerateAssetsCommand": "make -f simulator/gcc/Makefile assets -j8",
+    "PostGenerateCommand": "touchgfx update_project --project-file=simulator/msvs/Application.vcxproj",
+    "PostGenerateTargetCommand": "touchgfx update_project",
+    "CompileSimulatorCommand": "make -f simulator/gcc/Makefile -j8",
+    "RunSimulatorCommand": "build\\bin\\simulator.exe",
+    "LandscapeSkinX": 0,
+    "LandscapeSkinY": 0,
+    "PortraitSkinX": 0,
+    "PortraitSkinY": 0,
+    "DisplayOrientation": "Landscape",
+    "Family": "STM32F7",
+    "SubFamily": "STM32F7x6",
+    "Toolchain": "CMake",
+    "Platform": "m7",
+    "ProjectFile": "../AISpeaker.ioc",
+    "OptionalComponentsRoot": "../Middlewares/ST/touchgfx_components",
+    "OptionalComponents": [],
+    "AdditionalFeatures": [
+      "CWRVector",
+      "VectorFonts",
+      "Video"
+    ]
+  },
+  "Version": "4.26.0"
+}

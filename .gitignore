@@ -1,0 +1,14 @@
+.idea
+build
+Drivers
+LIBJPEG
+LWIP
+Middlewares
+TouchGFX/App
+TouchGFX/assets
+TouchGFX/simulator
+TouchGFX/build
+STM32F746XX_FLASH.ld
+CMakePresets.json
+startup_stm32f746xx.s
+.mxproject
