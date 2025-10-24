@@ -162,7 +162,7 @@ static FMC_SDRAM_CommandTypeDef Command;
 
 char *pDirectoryFiles[MAX_BMP_FILES];
 uint8_t ubNumberOfFiles = 0;
-
+uint8_t abc;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
