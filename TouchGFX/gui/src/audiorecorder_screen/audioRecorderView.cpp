@@ -11,6 +11,7 @@
 #include "stm32f7xx_hal_i2s.h"
 #include "audio_rec_play.h"
 
+extern uint16_t SavedFileNum;
 extern uint8_t audio_save_flag;
 extern AUDIO_PLAYBACK_StateTypeDef audio_state;
 extern osSemaphoreId_t stopRecordSemHandle;
@@ -41,6 +42,8 @@ void audioRecorderView::setupScreen()
     Unicode::snprintf(textArea1Buffer, TEXTAREA1_SIZE, "%s", touchgfx::TypedText(initText).getText());
     textArea1.setWildcard(textArea1Buffer);
     textArea1.invalidate();
+    textArea3.setVisible(false);
+    textArea3.invalidate();
 
     saveButton.setTouchable(false);
 }
@@ -93,5 +96,17 @@ void audioRecorderView::startSaving()
     textArea1.setWildcard(textArea1Buffer);
     textArea1.invalidate();
     saveButton.setTouchable(false);
+
+#ifndef SIMULATOR
+    audio_save_flag = 1;
+#endif
 }
 
+void audioRecorderView::saveCompleted()
+{
+    audio_save_flag = 0;
+    Unicode::snprintf(textArea3Buffer, TEXTAREA3_SIZE, "RECORDED%d.WAV", SavedFileNum);
+    textArea3.setWildcard(textArea3Buffer);
+    textArea3.setVisible(true);
+    textArea3.invalidate();
+}

@@ -15,7 +15,7 @@ public:
         model = m;
     }
 
-    virtual void saveCompleted();
+    virtual void saveCompleted() {};
 
 protected:
     Model* model;

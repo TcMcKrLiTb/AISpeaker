@@ -27,8 +27,6 @@ public:
 
     virtual ~audioPlayerPresenter() {}
 
-    void saveCompleted() override;
-
 private:
     audioPlayerPresenter();
 

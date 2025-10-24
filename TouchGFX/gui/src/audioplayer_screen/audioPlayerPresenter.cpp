@@ -5,8 +5,6 @@
 
 #include <cstdio>
 
-extern uint16_t SavedFileNum;
-
 #endif
 
 audioPlayerPresenter::audioPlayerPresenter(audioPlayerView& v)
@@ -25,7 +23,3 @@ void audioPlayerPresenter::deactivate()
 
 }
 
-void audioPlayerPresenter::saveCompleted()
-{
-
-}

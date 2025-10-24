@@ -16,3 +16,8 @@ void audioRecorderPresenter::deactivate()
 {
 
 }
+
+void audioRecorderPresenter::saveCompleted()
+{
+    view.saveCompleted();
+}

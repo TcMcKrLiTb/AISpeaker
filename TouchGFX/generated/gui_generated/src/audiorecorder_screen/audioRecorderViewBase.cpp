@@ -53,6 +53,15 @@ audioRecorderViewBase::audioRecorderViewBase() :
     textArea2.setLinespacing(0);
     textArea2.setTypedText(touchgfx::TypedText(T___SINGLEUSE_VC3R));
     add(textArea2);
+
+    textArea3.setXY(255, 224);
+    textArea3.setColor(touchgfx::Color::getColorFromRGB(13, 120, 128));
+    textArea3.setLinespacing(0);
+    Unicode::snprintf(textArea3Buffer, TEXTAREA3_SIZE, "%s", touchgfx::TypedText(T_NEWFILENAME).getText());
+    textArea3.setWildcard(textArea3Buffer);
+    textArea3.resizeToCurrentText();
+    textArea3.setTypedText(touchgfx::TypedText(T___SINGLEUSE_6WMJ));
+    add(textArea3);
 }
 
 audioRecorderViewBase::~audioRecorderViewBase()

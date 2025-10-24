@@ -15,6 +15,7 @@ public:
     virtual void startRecord();
     virtual void stopRecord();
     virtual void startSaving();
+    virtual void saveCompleted();
 
 protected:
 };

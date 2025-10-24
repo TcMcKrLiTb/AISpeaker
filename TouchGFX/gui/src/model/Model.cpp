@@ -22,15 +22,10 @@ Model::Model() : modelListener(0)
 void Model::tick()
 {
 #ifndef SIMULATOR
-
-    // In case we are waiting for saving to finish, check if it is done
-    if (audio_save_flag == 1) {
-        // Wait for save to finish
-        if (osSemaphoreAcquire(saveFiniSemHandle, 0) == osOK) {
-            audio_save_flag = 0;
-            if (modelListener) {
-                modelListener->saveCompleted();
-            }
+    // Saving finished
+    if (osSemaphoreAcquire(saveFiniSemHandle, 0) == osOK) {
+        if (modelListener) {
+            modelListener->saveCompleted();
         }
     }
 #endif

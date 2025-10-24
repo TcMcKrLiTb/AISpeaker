@@ -53,12 +53,15 @@ protected:
     touchgfx::ClickListener< touchgfx::Image > image2;
     touchgfx::TextAreaWithOneWildcard textArea1;
     touchgfx::TextArea textArea2;
+    touchgfx::TextAreaWithOneWildcard textArea3;
 
     /*
      * Wildcard Buffers
      */
     static const uint16_t TEXTAREA1_SIZE = 15;
     touchgfx::Unicode::UnicodeChar textArea1Buffer[TEXTAREA1_SIZE];
+    static const uint16_t TEXTAREA3_SIZE = 16;
+    touchgfx::Unicode::UnicodeChar textArea3Buffer[TEXTAREA3_SIZE];
 
 private:
 

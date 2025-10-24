@@ -108,6 +108,27 @@
               "Blue": 122
             },
             "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "textArea3",
+            "X": 255,
+            "Y": 224,
+            "Width": 210,
+            "Height": 19,
+            "TextId": "__SingleUse_6WMJ",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 13,
+              "Green": 120,
+              "Blue": 128
+            },
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "newFileName",
+              "UseBuffer": true,
+              "BufferSize": 16
+            }
           }
         ],
         "Interactions": [

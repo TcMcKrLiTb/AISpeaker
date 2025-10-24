@@ -48,7 +48,7 @@ static inline void INVALIDATE_DCACHE(void* addr, uint32_t len) {
 uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
 {
     UINT br;
-    if (f_mount(&SDFatFS, (TCHAR const*)"", 0)) {
+    if (f_mount(&SDFatFS, (TCHAR const*)"", 1)) {
         return 1; // mount failed
     }
     if (f_open(&SDFile, (TCHAR const*)WavName, FA_READ)) {
@@ -235,22 +235,25 @@ static uint32_t SaveDataToSDCard()
     UINT bw;
     FILINFO fno;
     DIR dir;
-    uint32_t index = 0;
     char patternStr[40];
     // open file
     if (sdFileOpened) {
         f_close(&SDFile);
         sdFileOpened = 0;
     }
+    if (f_mount(&SDFatFS, (TCHAR const*)"", 1)) {
+        return 1; // mount failed
+    }
     do {
         snprintf(patternStr, 40, "RECORDED%d.WAV", SavedFileNum);
         retSD = f_findfirst(&dir, &fno, "/Audio", patternStr);
         if (retSD != FR_OK) {
-            printf("Failed to search existing recorded files!\r\n");
+            printf("Failed to search existing recorded files! ret:%d\r\n", retSD);
             return 1;
         }
     } while (fno.fname[0] != 0 && ++SavedFileNum < 1000);
-    retSD = f_open(&SDFile, "patternStr", FA_CREATE_ALWAYS | FA_WRITE);
+    snprintf((char *)sector, 100, "/Audio/%s", patternStr);
+    retSD = f_open(&SDFile, (char *)sector, FA_CREATE_ALWAYS | FA_WRITE);
     if (retSD != FR_OK) {
         printf("Failed to open file for recording save!\r\n");
         return 1;
@@ -411,9 +414,10 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
 
 uint8_t StartRecord()
 {
-    if (BSP_AUDIO_IN_Init(I2S_AUDIOFREQ_16K,
-                          DEFAULT_AUDIO_IN_BIT_RESOLUTION,
-                          DEFAULT_AUDIO_IN_CHANNEL_NBR) == AUDIO_OK) {
+    if (BSP_AUDIO_IN_InitEx(INPUT_DEVICE_INPUT_LINE_1,
+                            I2S_AUDIOFREQ_16K,
+                            DEFAULT_AUDIO_IN_BIT_RESOLUTION,
+                            DEFAULT_AUDIO_IN_CHANNEL_NBR) == AUDIO_OK) {
         printf("AUDIO RECORD CODEC OK!!!\r\n");
     } else {
         printf("AUDIO RECORD CODEC FAILED!!!\r\n");
