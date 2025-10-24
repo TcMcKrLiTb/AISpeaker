@@ -196,7 +196,7 @@ void EnableMemoryMappedMode(uint8_t manufacturer_id);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint_8 shit;
 /* USER CODE END 0 */
 
 /**
