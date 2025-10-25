@@ -7,6 +7,8 @@
 #define AUDIO_BUFFER_SIZE       4096
 #define AUDIO_DEFAULT_VOLUME    70
 
+#define AUDIO_BLOCK_SIZE        (65504U)
+
 #define I2S_AUDIOFREQ_16K       (16000U)
 
 // make a 1MB buffer
@@ -43,7 +45,7 @@ typedef enum {
 }BUFFER_StateTypeDef;
 
 typedef struct {
-    uint8_t buff[AUDIO_BUFFER_SIZE];
+    uint8_t buff[AUDIO_BLOCK_SIZE * 2];
     uint32_t fptr;
     BUFFER_StateTypeDef state;
 }AUDIO_BufferTypeDef;

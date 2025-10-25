@@ -29,9 +29,12 @@ __IO uint8_t audio_in_error_flag;
 __IO uint8_t audio_pause_flag;
 __IO uint8_t audio_save_flag;
 ALIGN_32BYTES (AUDIO_BufferTypeDef  buffer_ctl);
+
 extern osSemaphoreId_t audioSemHandle;
 extern osSemaphoreId_t stopRecordSemHandle;
 extern osSemaphoreId_t saveFiniSemHandle;
+
+extern DMA_HandleTypeDef hdma_sai2_b;
 
 // temperate buffer to storage some info
 uint8_t sector[512];
@@ -217,19 +220,6 @@ static uint32_t GetData(void *pdata, uint32_t offset, uint8_t *pbuf, uint32_t Nb
     return ReadDataNbr;
 }
 
-static uint32_t PutData(void *pdata, uint32_t offset, const uint8_t *pbuf, uint32_t NbrOfData)
-{
-    uint8_t *lptr = pdata;
-    uint32_t WrittenDataNbr;
-
-    WrittenDataNbr = 0;
-    while(WrittenDataNbr < NbrOfData) {
-        lptr [offset + WrittenDataNbr]= pbuf[WrittenDataNbr];
-        WrittenDataNbr++;
-    }
-    return WrittenDataNbr;
-}
-
 static uint32_t SaveDataToSDCard()
 {
     UINT bw;
@@ -326,7 +316,7 @@ wavInfo wavInfoNow;
 uint8_t StartPlayback(const char* path, uint16_t initVolume)
 {
     FRESULT res;
-    uint32_t bytesread;
+    uint32_t bytesRead;
 
     if (sdFileOpened) {
         f_close(&SDFile);
@@ -392,20 +382,20 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
     buffer_ctl.state = BUFFER_OFFSET_NONE;
     AudioStartAddress = (uint32_t)external_buffer;
     AudioFileSize = wavInfoNow.dataChunkSize;
-    bytesread = GetData( (void *)AudioStartAddress,
-                         0,
-                         &buffer_ctl.buff[0],
-                         AUDIO_BUFFER_SIZE);
+    bytesRead = GetData((void *)AudioStartAddress,
+                        0,
+                        &buffer_ctl.buff[0],
+                        AUDIO_BUFFER_SIZE);
 
     // start play audio
-    if(bytesread > 0)
+    if(bytesRead > 0)
     {
         /* Clean Data Cache to update the content of the SRAM */
         SCB_CleanDCache_by_Addr((uint32_t*)&buffer_ctl.buff[0], AUDIO_BUFFER_SIZE/2);
 
         BSP_AUDIO_OUT_Play((uint16_t*)&buffer_ctl.buff[0], AUDIO_BUFFER_SIZE);
         audio_state = AUDIO_STATE_PLAYING;
-        buffer_ctl.fptr = bytesread;
+        buffer_ctl.fptr = bytesRead;
         return 0;
     }
 
@@ -414,7 +404,7 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
 
 uint8_t StartRecord()
 {
-    if (BSP_AUDIO_IN_InitEx(INPUT_DEVICE_INPUT_LINE_1,
+    if (BSP_AUDIO_IN_InitEx(INPUT_DEVICE_DIGITAL_MICROPHONE_2,
                             I2S_AUDIOFREQ_16K,
                             DEFAULT_AUDIO_IN_BIT_RESOLUTION,
                             DEFAULT_AUDIO_IN_CHANNEL_NBR) == AUDIO_OK) {
@@ -423,10 +413,12 @@ uint8_t StartRecord()
         printf("AUDIO RECORD CODEC FAILED!!!\r\n");
         return 1;
     }
+
+    AudioStartAddress = (uint32_t)external_buffer;
     buffer_ctl.state = BUFFER_OFFSET_NONE;
     buffer_ctl.fptr = 0;
-    BSP_AUDIO_IN_Record((uint16_t*)&buffer_ctl.buff[0], AUDIO_BUFFER_SIZE);
     audio_state = AUDIO_STATE_RECORDING;
+    BSP_AUDIO_IN_Record((uint16_t*)&buffer_ctl.buff[0], AUDIO_BLOCK_SIZE);
     return 0;
 }
 
@@ -474,10 +466,9 @@ void audioFiller_Task(void *argument)
 
                 /* 1st half buffer played; so fill it and continue playing from bottom*/
                 if (buffer_ctl.state == BUFFER_OFFSET_HALF) {
-                    bytesRead = GetData((void *) AudioStartAddress,
-                                        buffer_ctl.fptr,
-                                        &buffer_ctl.buff[0],
-                                        AUDIO_BUFFER_SIZE / 2);
+                    memcpy((uint32_t *)(AudioStartAddress + buffer_ctl.fptr),
+                           &buffer_ctl.buff[0],
+                           AUDIO_BUFFER_SIZE / 2);
 
                     if (bytesRead > 0) {
                         buffer_ctl.state = BUFFER_OFFSET_NONE;
@@ -507,34 +498,26 @@ void audioFiller_Task(void *argument)
             case AUDIO_STATE_RECORDING:
                 /* 1st half buffer recorded; so write these data into SDRAM*/
                 if (buffer_ctl.state == BUFFER_OFFSET_HALF) {
-                    bytesRead = PutData((void *) AudioStartAddress,
-                                        buffer_ctl.fptr,
-                                        &buffer_ctl.buff[0],
-                                        AUDIO_BUFFER_SIZE / 2);
+                    buffer_ctl.state = BUFFER_OFFSET_NONE;
+                    memcpy((uint32_t *)(AudioStartAddress + buffer_ctl.fptr),
+                           &buffer_ctl.buff[0],
+                           AUDIO_BLOCK_SIZE);
 
-                    if (bytesRead > 0) {
-                        buffer_ctl.state = BUFFER_OFFSET_NONE;
-                        buffer_ctl.fptr += bytesRead;
-
-                        /* Clean Data Cache to update the content of the SRAM */
-                        SCB_CleanDCache_by_Addr((uint32_t *) &buffer_ctl.buff[0], AUDIO_BUFFER_SIZE / 2);
-                    }
+                    buffer_ctl.fptr += AUDIO_BLOCK_SIZE;
+                    printf("buffer Half, Recorded %lu bytes\r\n", buffer_ctl.fptr);
                 }
 
                 /* 2nd half buffer recorded; so write these data into SDRAM*/
                 if (buffer_ctl.state == BUFFER_OFFSET_FULL) {
-                    bytesRead = PutData((void *) AudioStartAddress,
-                                        buffer_ctl.fptr,
-                                        &buffer_ctl.buff[AUDIO_BUFFER_SIZE / 2],
-                                        AUDIO_BUFFER_SIZE / 2);
-                    if (bytesRead > 0) {
-                        buffer_ctl.state = BUFFER_OFFSET_NONE;
-                        buffer_ctl.fptr += bytesRead;
+                    buffer_ctl.state = BUFFER_OFFSET_NONE;
 
-                        /* Clean Data Cache to update the content of the SRAM */
-                        SCB_CleanDCache_by_Addr((uint32_t *) &buffer_ctl.buff[AUDIO_BUFFER_SIZE / 2],
-                                                AUDIO_BUFFER_SIZE / 2);
-                    }
+                    memcpy((uint32_t *)(AudioStartAddress + buffer_ctl.fptr),
+                           &buffer_ctl.buff[AUDIO_BLOCK_SIZE],
+                           AUDIO_BLOCK_SIZE);
+
+                    buffer_ctl.fptr += AUDIO_BLOCK_SIZE;
+
+                    printf("buffer Full, Recorded %lu bytes\r\n", buffer_ctl.fptr);
                 }
 
                 if (buffer_ctl.fptr >= SDRAM_AUDIO_BLOCK_SIZE) {
@@ -588,6 +571,23 @@ void audioFiller_Task(void *argument)
         }
         if (osOK == osSemaphoreAcquire(stopRecordSemHandle, 0) && audio_state == AUDIO_STATE_RECORDING) {
             BSP_AUDIO_IN_Stop(CODEC_PDWN_SW);
+            uint32_t dmaCurrentPos = __HAL_DMA_GET_COUNTER(&hdma_sai2_b);
+            uint32_t remainingDataSize = dmaCurrentPos > (AUDIO_BLOCK_SIZE / 2) ?
+                    dmaCurrentPos - AUDIO_BLOCK_SIZE / 2 :
+                    AUDIO_BLOCK_SIZE / 2 - dmaCurrentPos;
+            dmaCurrentPos = dmaCurrentPos > (AUDIO_BLOCK_SIZE / 2) ?
+                    AUDIO_BLOCK_SIZE / 2 :
+                    0;
+            if (remainingDataSize > 0) {
+                // copy remaining data to SDRAM
+                memcpy((uint32_t *)(AudioStartAddress + buffer_ctl.fptr),
+                       &buffer_ctl.buff[dmaCurrentPos],
+                       remainingDataSize);
+                buffer_ctl.fptr += remainingDataSize;
+                printf("Remaining data copied to SDRAM, total recorded size: %lu bytes\r\n", buffer_ctl.fptr);
+            } else {
+                printf("No remaining data to copy, total recorded size: %lu bytes\r\n", buffer_ctl.fptr);
+            }
             audio_state = AUDIO_STATE_IDLE;
             printf("Recording stopped by user!!\r\n");
         }
@@ -622,7 +622,7 @@ void BSP_AUDIO_IN_TransferComplete_CallBack(void)
 {
     if(audio_state == AUDIO_STATE_RECORDING) {
         /* allows AUDIO_Process() to refill 1st part of the buffer  */
-        buffer_ctl.state = BUFFER_OFFSET_HALF;
+        buffer_ctl.state = BUFFER_OFFSET_FULL;
     } else {
         audio_in_error_flag = 1;
     }
