@@ -18,6 +18,8 @@
 #include <gui/audioplayer_screen/audioPlayerPresenter.hpp>
 #include <gui/fatfstester_screen/fatFSTesterView.hpp>
 #include <gui/fatfstester_screen/fatFSTesterPresenter.hpp>
+#include <gui/ethernettester_screen/EthernetTesterView.hpp>
+#include <gui/ethernettester_screen/EthernetTesterPresenter.hpp>
 
 
 /**
@@ -43,7 +45,8 @@ public:
     typedef touchgfx::meta::TypeList< audioRecorderView,
             touchgfx::meta::TypeList< audioPlayerView,
             touchgfx::meta::TypeList< fatFSTesterView,
-            touchgfx::meta::Nil > >
+            touchgfx::meta::TypeList< EthernetTesterView,
+            touchgfx::meta::Nil > > >
             > GeneratedViewTypes;
 
     /**
@@ -58,7 +61,8 @@ public:
     typedef touchgfx::meta::TypeList< audioRecorderPresenter,
             touchgfx::meta::TypeList< audioPlayerPresenter,
             touchgfx::meta::TypeList< fatFSTesterPresenter,
-            touchgfx::meta::Nil > >
+            touchgfx::meta::TypeList< EthernetTesterPresenter,
+            touchgfx::meta::Nil > > >
             > GeneratedPresenterTypes;
 
     /**

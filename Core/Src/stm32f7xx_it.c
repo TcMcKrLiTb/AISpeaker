@@ -22,22 +22,10 @@
 #include "stm32f7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-
-typedef struct {
-    uint32_t r0;
-    uint32_t r1;
-    uint32_t r2;
-    uint32_t r3;
-    uint32_t r12;
-    uint32_t lr;
-    uint32_t pc;
-    uint32_t xpsr;
-} stacked_regs_t;
 
 /* USER CODE END TD */
 
@@ -54,8 +42,6 @@ typedef struct {
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
-extern UART_HandleTypeDef huart1;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -70,13 +56,14 @@ extern UART_HandleTypeDef huart1;
 
 /* External variables --------------------------------------------------------*/
 extern ETH_HandleTypeDef heth;
-extern DMA_HandleTypeDef hdma_memtomem_dma2_stream0;
 extern DMA2D_HandleTypeDef hdma2d;
 extern SDRAM_HandleTypeDef hsdram1;
 extern I2C_HandleTypeDef hi2c3;
 extern LTDC_HandleTypeDef hltdc;
 extern DMA_HandleTypeDef hdma_sai2_a;
 extern DMA_HandleTypeDef hdma_sai2_b;
+extern SAI_HandleTypeDef hsai_BlockA2;
+extern SAI_HandleTypeDef hsai_BlockB2;
 extern DMA_HandleTypeDef hdma_sdmmc1_rx;
 extern DMA_HandleTypeDef hdma_sdmmc1_tx;
 extern SD_HandleTypeDef hsd1;
@@ -113,81 +100,7 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 
-    uint32_t lr_val;
-    uint32_t msp, psp;
-    uint32_t strLen = 0;
-    char printStr[100];
-    __asm volatile ("mov %0, lr" : "=r" (lr_val) );
-    __asm volatile ("mrs %0, msp" : "=r" (msp) );
-    __asm volatile ("mrs %0, psp" : "=r" (psp) );
-
-    /* Choose the correct stack frame pointer (stacked registers) */
-    uint32_t *stacked = ( (lr_val & 4) == 0 ) ? (uint32_t *)msp : (uint32_t *)psp;
-
-    /* Extract stacked registers */
-    uint32_t r0   = stacked[0];
-    uint32_t r1   = stacked[1];
-    uint32_t r2   = stacked[2];
-    uint32_t r3   = stacked[3];
-    uint32_t r12  = stacked[4];
-    uint32_t lr   = stacked[5];
-    uint32_t pc   = stacked[6];
-    uint32_t xpsr = stacked[7];
-
-    /* Read SCB fault registers directly (addresses from Cortex-M spec) */
-    volatile uint32_t *CFSR = (volatile uint32_t *)0xE000ED28UL;
-    volatile uint32_t *HFSR = (volatile uint32_t *)0xE000ED2CUL;
-    volatile uint32_t *MMFAR = (volatile uint32_t *)0xE000ED34UL;
-    volatile uint32_t *BFAR  = (volatile uint32_t *)0xE000ED38UL;
-
-    uint32_t cfsr = *CFSR;
-    uint32_t hfsr = *HFSR;
-    uint32_t mmfar = *MMFAR;
-    uint32_t bfar  = *BFAR;
-
-    /* Print everything in one function */
-    strLen = snprintf(printStr, 100, "\r\n=== HARDFAULT ===\r\n");
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "Stack used: %s (LR=0x%08lx)\r\n", ((lr_val & 4) == 0) ? "MSP" : "PSP",
-                      (unsigned long)lr_val);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "R0  = 0x%08lx\r\n", (unsigned long)r0);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "R1  = 0x%08lx\r\n", (unsigned long)r1);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "R2  = 0x%08lx\r\n", (unsigned long)r2);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "R3  = 0x%08lx\r\n", (unsigned long)r3);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "R12 = 0x%08lx\r\n", (unsigned long)r12);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "LR  = 0x%08lx\r\n", (unsigned long)lr);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "PC  = 0x%08lx\r\n", (unsigned long)pc);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "xPSR= 0x%08lx\r\n", (unsigned long)xpsr);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-
-    strLen = snprintf(printStr, 100, "CFSR=0x%08lx HFSR=0x%08lx\r\n", (unsigned long)cfsr, (unsigned long)hfsr);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    strLen = snprintf(printStr, 100, "BFAR=0x%08lx MMFAR=0x%08lx\r\n", (unsigned long)bfar, (unsigned long)mmfar);
-    HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-
-    /* Optional: decode a couple of common bits (brief) */
-    if (cfsr & (1 << 7)) { /* BFARVALID */
-        strLen = snprintf(printStr, 100, "BusFault: BFARVALID set. Fault address = 0x%08lx\r\n", (unsigned long)bfar);
-        HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    }
-    if (cfsr & (1 << 1)) { /* PRECISERR */
-        strLen = snprintf(printStr, 100, "BusFault: PRECISERR (precise data bus error) set.\r\n");
-        HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    }
-    if (hfsr & (1UL << 30)) {
-        strLen = snprintf(printStr, 100, "HFSR: FORCED bit set (escalated fault -> HardFault).\r\n");
-        HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
-    }
-
-    /* USER CODE END HardFault_IRQn 0 */
+  /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
@@ -331,20 +244,6 @@ void TIM6_DAC_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA2 stream0 global interrupt.
-  */
-void DMA2_Stream0_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Stream0_IRQn 0 */
-
-  /* USER CODE END DMA2_Stream0_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_memtomem_dma2_stream0);
-  /* USER CODE BEGIN DMA2_Stream0_IRQn 1 */
-
-  /* USER CODE END DMA2_Stream0_IRQn 1 */
-}
-
-/**
   * @brief This function handles DMA2 stream3 global interrupt.
   */
 void DMA2_Stream3_IRQHandler(void)
@@ -454,6 +353,21 @@ void DMA2D_IRQHandler(void)
   /* USER CODE BEGIN DMA2D_IRQn 1 */
 
   /* USER CODE END DMA2D_IRQn 1 */
+}
+
+/**
+  * @brief This function handles SAI2 global interrupt.
+  */
+void SAI2_IRQHandler(void)
+{
+  /* USER CODE BEGIN SAI2_IRQn 0 */
+
+  /* USER CODE END SAI2_IRQn 0 */
+  HAL_SAI_IRQHandler(&hsai_BlockA2);
+  HAL_SAI_IRQHandler(&hsai_BlockB2);
+  /* USER CODE BEGIN SAI2_IRQn 1 */
+
+  /* USER CODE END SAI2_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

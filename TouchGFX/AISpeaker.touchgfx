@@ -240,7 +240,7 @@
             "X": 59,
             "Y": 105,
             "Width": 120,
-            "Height": 18,
+            "Height": 19,
             "TextId": "__SingleUse_Z5TA",
             "TextRotation": "0",
             "AutoSize": true,
@@ -256,7 +256,7 @@
             "X": 183,
             "Y": 105,
             "Width": 88,
-            "Height": 18,
+            "Height": 19,
             "TextId": "__SingleUse_IV1Y",
             "TextRotation": "0",
             "AutoSize": true,
@@ -519,8 +519,8 @@
             "Name": "firstFileText",
             "X": 72,
             "Y": 89,
-            "Width": 206,
-            "Height": 24,
+            "Width": 126,
+            "Height": 29,
             "TextId": "__SingleUse_7XNW",
             "TextRotation": "0",
             "AutoSize": true,
@@ -536,7 +536,7 @@
             "X": 72,
             "Y": 136,
             "Width": 90,
-            "Height": 24,
+            "Height": 29,
             "TextId": "__SingleUse_L2CQ",
             "TextRotation": "0",
             "AutoSize": true,
@@ -544,6 +544,19 @@
               "UseBuffer": true,
               "BufferSize": 3
             }
+          }
+        ],
+        "Interactions": []
+      },
+      {
+        "Name": "EthernetTester",
+        "Components": [
+          {
+            "Type": "Image",
+            "Name": "image1",
+            "Width": 480,
+            "Height": 272,
+            "RelativeFilename": "__generated\\clay_theme_images_backgrounds_480x272_rays.png"
           }
         ],
         "Interactions": []
@@ -680,8 +693,7 @@
     "OptionalComponents": [],
     "AdditionalFeatures": [
       "CWRVector",
-      "VectorFonts",
-      "Video"
+      "VectorFonts"
     ]
   },
   "Version": "4.26.0"

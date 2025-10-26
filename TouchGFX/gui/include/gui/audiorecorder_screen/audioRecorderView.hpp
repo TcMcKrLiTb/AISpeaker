@@ -11,12 +11,6 @@ public:
     virtual ~audioRecorderView() {}
     virtual void setupScreen();
     virtual void tearDownScreen();
-
-    virtual void startRecord();
-    virtual void stopRecord();
-    virtual void startSaving();
-    virtual void saveCompleted();
-
 protected:
 };
 

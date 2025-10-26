@@ -76,6 +76,7 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
  */
 /* USER CODE BEGIN enableSDDmaCacheMaintenance */
 /* #define ENABLE_SD_DMA_CACHE_MAINTENANCE  1 */
+#define ENABLE_SD_DMA_CACHE_MAINTENANCE 1
 /* USER CODE END enableSDDmaCacheMaintenance */
 
 /*
@@ -85,8 +86,7 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
 */
 /* USER CODE BEGIN enableScratchBuffer */
 /* #define ENABLE_SCRATCH_BUFFER */
-#define ENABLE_SCRATCH_BUFFER 1
-#define ENABLE_SD_DMA_CACHE_MAINTENANCE 1
+#define ENABLE_SCRATCH_BUFFER
 /* USER CODE END enableScratchBuffer */
 
 /* Private variables ---------------------------------------------------------*/
