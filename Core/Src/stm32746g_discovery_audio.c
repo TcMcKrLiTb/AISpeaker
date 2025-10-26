@@ -942,9 +942,8 @@ uint8_t  BSP_AUDIO_IN_Record(uint16_t* pbuf, uint32_t size)
 {
   uint32_t ret = AUDIO_ERROR;
 
-  HAL_StatusTypeDef HALret;
   /* Start the process receive DMA */
-    HALret = HAL_SAI_Receive_DMA(&hsai_BlockB2, (uint8_t*)pbuf, size);
+  HAL_SAI_Receive_DMA(&hsai_BlockB2, (uint8_t*)pbuf, size);
 
   /* Return AUDIO_OK when all operations are correctly done */
   ret = AUDIO_OK;

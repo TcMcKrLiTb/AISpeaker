@@ -30,9 +30,9 @@ __IO uint8_t audio_pause_flag;
 __IO uint8_t audio_save_flag;
 ALIGN_32BYTES (AUDIO_BufferTypeDef  buffer_ctl);
 
-extern osSemaphoreId_t audioSemHandle;
-extern osSemaphoreId_t stopRecordSemHandle;
-extern osSemaphoreId_t saveFiniSemHandle;
+extern osSemaphoreId audioSemHandle;
+extern osSemaphoreId stopRecordSemHandle;
+extern osSemaphoreId saveFiniSemHandle;
 
 extern DMA_HandleTypeDef hdma_sai2_b;
 
@@ -466,10 +466,10 @@ void audioFiller_Task(void *argument)
 
                 /* 1st half buffer played; so fill it and continue playing from bottom*/
                 if (buffer_ctl.state == BUFFER_OFFSET_HALF) {
-                    memcpy((uint32_t *)(AudioStartAddress + buffer_ctl.fptr),
-                           &buffer_ctl.buff[0],
-                           AUDIO_BUFFER_SIZE / 2);
-
+                    bytesRead = GetData((void *) AudioStartAddress,
+                                        buffer_ctl.fptr,
+                                        &buffer_ctl.buff[0],
+                                        AUDIO_BUFFER_SIZE / 2);
                     if (bytesRead > 0) {
                         buffer_ctl.state = BUFFER_OFFSET_NONE;
                         buffer_ctl.fptr += bytesRead;
@@ -534,7 +534,7 @@ void audioFiller_Task(void *argument)
                 break;
         }
         osDelay(1);
-        if (osOK == osSemaphoreAcquire(audioSemHandle, 0) && audio_state == AUDIO_STATE_PLAYING) {
+        if (osOK == osSemaphoreWait(audioSemHandle, 0) && audio_state == AUDIO_STATE_PLAYING) {
             if (buffer_ctl.state == BUFFER_OFFSET_HALF || buffer_ctl.state == BUFFER_OFFSET_FULL) {
                 /* delay this job, do it in next loop */
                 osSemaphoreRelease(audioSemHandle);
@@ -569,7 +569,7 @@ void audioFiller_Task(void *argument)
                 osDelay(1);
             }
         }
-        if (osOK == osSemaphoreAcquire(stopRecordSemHandle, 0) && audio_state == AUDIO_STATE_RECORDING) {
+        if (osOK == osSemaphoreWait(stopRecordSemHandle, 0) && audio_state == AUDIO_STATE_RECORDING) {
             BSP_AUDIO_IN_Stop(CODEC_PDWN_SW);
             uint32_t dmaCurrentPos = __HAL_DMA_GET_COUNTER(&hdma_sai2_b);
             uint32_t remainingDataSize = dmaCurrentPos > (AUDIO_BLOCK_SIZE / 2) ?

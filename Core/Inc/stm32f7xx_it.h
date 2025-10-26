@@ -57,7 +57,6 @@ void USART1_IRQHandler(void);
 void FMC_IRQHandler(void);
 void SDMMC1_IRQHandler(void);
 void TIM6_DAC_IRQHandler(void);
-void DMA2_Stream0_IRQHandler(void);
 void DMA2_Stream3_IRQHandler(void);
 void DMA2_Stream4_IRQHandler(void);
 void ETH_IRQHandler(void);
@@ -66,6 +65,7 @@ void DMA2_Stream7_IRQHandler(void);
 void I2C3_EV_IRQHandler(void);
 void LTDC_IRQHandler(void);
 void DMA2D_IRQHandler(void);
+void SAI2_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

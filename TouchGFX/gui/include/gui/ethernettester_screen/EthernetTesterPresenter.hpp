@@ -1,17 +1,17 @@
-#ifndef AUDIORECORDERPRESENTER_HPP
-#define AUDIORECORDERPRESENTER_HPP
+#ifndef ETHERNETTESTERPRESENTER_HPP
+#define ETHERNETTESTERPRESENTER_HPP
 
 #include <gui/model/ModelListener.hpp>
 #include <mvp/Presenter.hpp>
 
 using namespace touchgfx;
 
-class audioRecorderView;
+class EthernetTesterView;
 
-class audioRecorderPresenter : public touchgfx::Presenter, public ModelListener
+class EthernetTesterPresenter : public touchgfx::Presenter, public ModelListener
 {
 public:
-    audioRecorderPresenter(audioRecorderView& v);
+    EthernetTesterPresenter(EthernetTesterView& v);
 
     /**
      * The activate function is called automatically when this screen is "switched in"
@@ -25,12 +25,12 @@ public:
      */
     virtual void deactivate();
 
-    virtual ~audioRecorderPresenter() {}
+    virtual ~EthernetTesterPresenter() {}
 
 private:
-    audioRecorderPresenter();
+    EthernetTesterPresenter();
 
-    audioRecorderView& view;
+    EthernetTesterView& view;
 };
 
-#endif // AUDIORECORDERPRESENTER_HPP
+#endif // ETHERNETTESTERPRESENTER_HPP

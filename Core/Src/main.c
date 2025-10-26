@@ -27,15 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
-#include "stm32746g_discovery_audio.h"
-#include "stm32746g_discovery_sdram.h"
-#include "audio_rec_play.h"
 #include "retarget.h"
-#include "wm8994.h"
 
 /* USER CODE END Includes */
 
@@ -46,6 +38,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define REFRESH_COUNT                    ((uint32_t)0x0603)   /* SDRAM refresh counter (100Mhz SD clock) */
 
 #define SDRAM_TIMEOUT                            ((uint32_t)0xFFFF)
 #define SDRAM_MODEREG_BURST_LENGTH_1             ((uint16_t)0x0000)
@@ -66,11 +60,6 @@
 #define FLASH_N25Q128A_DUMMY_CYCLES		0x0A
 #define FLASH_W25Q128J_DUMMY_CYCLES     0x06
 
-#define MAX_BMP_FILES 25
-#define MAX_BMP_FILE_NAME 15
-
-#define BUF_SIZE (16000 / 500 * 1000)
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -90,8 +79,6 @@ LTDC_HandleTypeDef hltdc;
 
 QSPI_HandleTypeDef hqspi;
 
-RTC_HandleTypeDef hrtc;
-
 SAI_HandleTypeDef hsai_BlockA2;
 SAI_HandleTypeDef hsai_BlockB2;
 DMA_HandleTypeDef hdma_sai2_a;
@@ -108,61 +95,16 @@ UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_memtomem_dma2_stream0;
 SDRAM_HandleTypeDef hsdram1;
 
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for TouchGFXTask */
-osThreadId_t TouchGFXTaskHandle;
-const osThreadAttr_t TouchGFXTask_attributes = {
-  .name = "TouchGFXTask",
-  .stack_size = 8192 * 4,
-  .priority = (osPriority_t) osPriorityAboveNormal,
-};
-/* Definitions for videoTask */
-osThreadId_t videoTaskHandle;
-const osThreadAttr_t videoTask_attributes = {
-  .name = "videoTask",
-  .stack_size = 1000 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for audioFillerTask */
-osThreadId_t audioFillerTaskHandle;
-const osThreadAttr_t audioFillerTask_attributes = {
-  .name = "audioFillerTask",
-  .stack_size = 2048 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
-};
-/* Definitions for sdFileMutex */
-osMutexId_t sdFileMutexHandle;
-const osMutexAttr_t sdFileMutex_attributes = {
-  .name = "sdFileMutex"
-};
-/* Definitions for audioSem */
-osSemaphoreId_t audioSemHandle;
-const osSemaphoreAttr_t audioSem_attributes = {
-  .name = "audioSem"
-};
-/* Definitions for stopRecordSem */
-osSemaphoreId_t stopRecordSemHandle;
-const osSemaphoreAttr_t stopRecordSem_attributes = {
-  .name = "stopRecordSem"
-};
-/* Definitions for saveFiniSem */
-osSemaphoreId_t saveFiniSemHandle;
-const osSemaphoreAttr_t saveFiniSem_attributes = {
-  .name = "saveFiniSem"
-};
+osThreadId defaultTaskHandle;
+osThreadId TouchGFXTaskHandle;
+osThreadId audioFillerTaskHandle;
+osSemaphoreId audioSemHandle;
+osSemaphoreId stopRecordSemHandle;
+osSemaphoreId saveFiniSemHandle;
 /* USER CODE BEGIN PV */
 
 static FMC_SDRAM_CommandTypeDef Command;
 
-char *pDirectoryFiles[MAX_BMP_FILES];
-uint8_t ubNumberOfFiles = 0;
-uint8_t abc;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -171,21 +113,19 @@ void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_CRC_Init(void);
-static void MX_DMA2D_Init(void);
-static void MX_I2C3_Init(void);
-static void MX_LTDC_Init(void);
-static void MX_QUADSPI_Init(void);
 static void MX_FMC_Init(void);
+static void MX_I2C3_Init(void);
+static void MX_QUADSPI_Init(void);
 static void MX_SDMMC1_SD_Init(void);
-static void MX_SAI2_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_DMA2D_Init(void);
+static void MX_LTDC_Init(void);
+static void MX_SAI2_Init(void);
 static void MX_USART1_UART_Init(void);
-static void MX_RTC_Init(void);
-void StartDefaultTask(void *argument);
-extern void TouchGFX_Task(void *argument);
-extern void videoTaskFunc(void *argument);
-extern void audioFiller_Task(void *argument);
+static void MX_CRC_Init(void);
+void StartDefaultTask(void const * argument);
+extern void TouchGFX_Task(void const * argument);
+extern void audioFiller_Task(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -243,49 +183,45 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_CRC_Init();
-  MX_DMA2D_Init();
-  MX_I2C3_Init();
-  MX_LTDC_Init();
-  MX_QUADSPI_Init();
   MX_FMC_Init();
-  MX_LIBJPEG_Init();
+  MX_I2C3_Init();
+  MX_QUADSPI_Init();
   MX_SDMMC1_SD_Init();
-  MX_FATFS_Init();
-  MX_SAI2_Init();
   MX_TIM2_Init();
+  MX_DMA2D_Init();
+  MX_LTDC_Init();
+  MX_SAI2_Init();
   MX_USART1_UART_Init();
-  MX_RTC_Init();
+  MX_CRC_Init();
+  MX_FATFS_Init();
+  MX_LIBJPEG_Init();
   MX_TouchGFX_Init();
   /* Call PreOsInit function */
   MX_TouchGFX_PreOSInit();
   /* USER CODE BEGIN 2 */
 
-  RetargetInit(&huart1);
+    RetargetInit(&huart1);
 
-  printf("Hello World!!!\r\n");
+    printf("Hello World!!!\r\n");
 
   /* USER CODE END 2 */
-
-  /* Init scheduler */
-  osKernelInitialize();
-  /* Create the mutex(es) */
-  /* creation of sdFileMutex */
-  sdFileMutexHandle = osMutexNew(&sdFileMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
-  /* creation of audioSem */
-  audioSemHandle = osSemaphoreNew(1, 0, &audioSem_attributes);
+  /* definition and creation of audioSem */
+  osSemaphoreDef(audioSem);
+  audioSemHandle = osSemaphoreCreate(osSemaphore(audioSem), 1);
 
-  /* creation of stopRecordSem */
-  stopRecordSemHandle = osSemaphoreNew(1, 0, &stopRecordSem_attributes);
+  /* definition and creation of stopRecordSem */
+  osSemaphoreDef(stopRecordSem);
+  stopRecordSemHandle = osSemaphoreCreate(osSemaphore(stopRecordSem), 1);
 
-  /* creation of saveFiniSem */
-  saveFiniSemHandle = osSemaphoreNew(1, 0, &saveFiniSem_attributes);
+  /* definition and creation of saveFiniSem */
+  osSemaphoreDef(saveFiniSem);
+  saveFiniSemHandle = osSemaphoreCreate(osSemaphore(saveFiniSem), 1);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -300,25 +236,23 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 1024);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-  /* creation of TouchGFXTask */
-  TouchGFXTaskHandle = osThreadNew(TouchGFX_Task, NULL, &TouchGFXTask_attributes);
+  /* definition and creation of TouchGFXTask */
+  osThreadDef(TouchGFXTask, TouchGFX_Task, osPriorityAboveNormal, 0, 8192);
+  TouchGFXTaskHandle = osThreadCreate(osThread(TouchGFXTask), NULL);
 
-  /* creation of videoTask */
-  videoTaskHandle = osThreadNew(videoTaskFunc, NULL, &videoTask_attributes);
-
-  /* creation of audioFillerTask */
-  audioFillerTaskHandle = osThreadNew(audioFiller_Task, NULL, &audioFillerTask_attributes);
+  /* definition and creation of audioFillerTask */
+  osThreadDef(audioFillerTask, audioFiller_Task, osPriorityHigh, 0, 2048);
+  audioFillerTaskHandle = osThreadCreate(osThread(audioFillerTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
+  // suspend audioFiller at First, start it when needed
+    osThreadSuspend(audioFillerTaskHandle);
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
-
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
   osKernelStart();
@@ -348,7 +282,6 @@ void SystemClock_Config(void)
   /** Configure LSE Drive Capability
   */
   HAL_PWR_EnableBkUpAccess();
-  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
   /** Configure the main internal regulator output voltage
   */
@@ -358,9 +291,8 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 25;
@@ -630,75 +562,12 @@ static void MX_QUADSPI_Init(void)
   }
   /* USER CODE BEGIN QUADSPI_Init 2 */
 
-  uint8_t manufacturer_id;
-  GetManufacturerId(&manufacturer_id);
-  EnableMemoryMappedMode(manufacturer_id);
-  HAL_NVIC_DisableIRQ(QUADSPI_IRQn);
+    uint8_t manufacturer_id;
+    GetManufacturerId(&manufacturer_id);
+    EnableMemoryMappedMode(manufacturer_id);
+    HAL_NVIC_DisableIRQ(QUADSPI_IRQn);
 
   /* USER CODE END QUADSPI_Init 2 */
-
-}
-
-/**
-  * @brief RTC Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_RTC_Init(void)
-{
-
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
-  RTC_TimeTypeDef sTime = {0};
-  RTC_DateTypeDef sDate = {0};
-
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-
-  /** Initialize RTC Only
-  */
-  hrtc.Instance = RTC;
-  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-  hrtc.Init.AsynchPrediv = 127;
-  hrtc.Init.SynchPrediv = 255;
-  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-  if (HAL_RTC_Init(&hrtc) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* USER CODE BEGIN Check_RTC_BKUP */
-
-  /* USER CODE END Check_RTC_BKUP */
-
-  /** Initialize RTC and set the Time and Date
-  */
-  sTime.Hours = 0x0;
-  sTime.Minutes = 0x0;
-  sTime.Seconds = 0x0;
-  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x1;
-  sDate.Year = 0x0;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
 
 }
 
@@ -734,7 +603,7 @@ static void MX_SAI2_Init(void)
   hsai_BlockA2.Init.TriState = SAI_OUTPUT_NOTRELEASED;
   hsai_BlockA2.FrameInit.FrameLength = 64;
   hsai_BlockA2.FrameInit.ActiveFrameLength = 32;
-  hsai_BlockA2.FrameInit.FSDefinition = SAI_FS_CHANNEL_IDENTIFICATION;
+  hsai_BlockA2.FrameInit.FSDefinition = SAI_FS_STARTFRAME;
   hsai_BlockA2.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
   hsai_BlockA2.FrameInit.FSOffset = SAI_FS_FIRSTBIT;
   hsai_BlockA2.SlotInit.FirstBitOffset = 0;
@@ -760,7 +629,7 @@ static void MX_SAI2_Init(void)
   hsai_BlockB2.Init.TriState = SAI_OUTPUT_NOTRELEASED;
   hsai_BlockB2.FrameInit.FrameLength = 64;
   hsai_BlockB2.FrameInit.ActiveFrameLength = 32;
-  hsai_BlockB2.FrameInit.FSDefinition = SAI_FS_CHANNEL_IDENTIFICATION;
+  hsai_BlockB2.FrameInit.FSDefinition = SAI_FS_STARTFRAME;
   hsai_BlockB2.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
   hsai_BlockB2.FrameInit.FSOffset = SAI_FS_FIRSTBIT;
   hsai_BlockB2.SlotInit.FirstBitOffset = 0;
@@ -797,18 +666,9 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.ClockBypass = SDMMC_CLOCK_BYPASS_DISABLE;
   hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B;
-  hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
+  hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
   hsd1.Init.ClockDiv = 0;
   /* USER CODE BEGIN SDMMC1_Init 2 */
-
-  if (HAL_SD_Init(&hsd1) != HAL_OK)
-  {
-      Error_Handler();
-  }
-  if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK)
-  {
-      Error_Handler();
-  }
 
   /* USER CODE END SDMMC1_Init 2 */
 
@@ -833,11 +693,11 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1000-1;
+  htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 100-1;
+  htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {
     Error_Handler();
@@ -911,10 +771,10 @@ static void MX_DMA_Init(void)
   hdma_memtomem_dma2_stream0.Init.Direction = DMA_MEMORY_TO_MEMORY;
   hdma_memtomem_dma2_stream0.Init.PeriphInc = DMA_PINC_ENABLE;
   hdma_memtomem_dma2_stream0.Init.MemInc = DMA_MINC_ENABLE;
-  hdma_memtomem_dma2_stream0.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-  hdma_memtomem_dma2_stream0.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+  hdma_memtomem_dma2_stream0.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream0.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
   hdma_memtomem_dma2_stream0.Init.Mode = DMA_NORMAL;
-  hdma_memtomem_dma2_stream0.Init.Priority = DMA_PRIORITY_HIGH;
+  hdma_memtomem_dma2_stream0.Init.Priority = DMA_PRIORITY_LOW;
   hdma_memtomem_dma2_stream0.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
   hdma_memtomem_dma2_stream0.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
   hdma_memtomem_dma2_stream0.Init.MemBurst = DMA_MBURST_SINGLE;
@@ -925,20 +785,17 @@ static void MX_DMA_Init(void)
   }
 
   /* DMA interrupt init */
-  /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 15, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
   /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 15, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
   /* DMA2_Stream4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 14, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream4_IRQn);
   /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 15, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
   /* DMA2_Stream7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 15, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 
 }
@@ -1072,7 +929,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LCD_BL_CTRL_GPIO_Port, LCD_BL_CTRL_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LCD_BL_CTL_GPIO_Port, LCD_BL_CTL_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LCD_DISP_GPIO_Port, LCD_DISP_Pin, GPIO_PIN_SET);
@@ -1083,12 +940,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LCD_BL_CTRL_Pin */
-  GPIO_InitStruct.Pin = LCD_BL_CTRL_Pin;
+  /*Configure GPIO pin : LCD_BL_CTL_Pin */
+  GPIO_InitStruct.Pin = LCD_BL_CTL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LCD_BL_CTRL_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(LCD_BL_CTL_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LCD_DISP_Pin */
   GPIO_InitStruct.Pin = LCD_DISP_Pin;
@@ -1164,26 +1021,25 @@ void EnableMemoryMappedMode(uint8_t manufacturer_id)
         Error_Handler();
     }
 }
-
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-* @brief Function implementing the defaultTask thread.
-* @param argument: Not used
-* @retval None
-*/
-
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+void StartDefaultTask(void const * argument)
 {
   /* init code for LWIP */
-//  MX_LWIP_Init();
+  MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
-
+    udp_init();
   /* Infinite loop */
   for(;;)
   {
+      osThreadTerminate(defaultTaskHandle);
     osDelay(1);
   }
   /* USER CODE END 5 */
@@ -1217,27 +1073,20 @@ void MPU_Config(void)
   /** Initializes and configures the Region and the memory to be protected
   */
   MPU_InitStruct.Number = MPU_REGION_NUMBER1;
-  MPU_InitStruct.BaseAddress = 0x90000000;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_128MB;
+  MPU_InitStruct.BaseAddress = 0x20048000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_16KB;
   MPU_InitStruct.SubRegionDisable = 0x0;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
   /** Initializes and configures the Region and the memory to be protected
   */
   MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_16MB;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
-
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-  /** Initializes and configures the Region and the memory to be protected
-  */
-  MPU_InitStruct.Number = MPU_REGION_NUMBER3;
-  MPU_InitStruct.BaseAddress = 0xC0000000;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_64MB;
+  MPU_InitStruct.BaseAddress = 0x2004c000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_1KB;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
   MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
 

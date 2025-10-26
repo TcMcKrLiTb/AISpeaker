@@ -7,7 +7,7 @@
 #define AUDIO_BUFFER_SIZE       4096
 #define AUDIO_DEFAULT_VOLUME    70
 
-#define AUDIO_BLOCK_SIZE        (65504U)
+#define AUDIO_BLOCK_SIZE        (32768U)
 
 #define I2S_AUDIOFREQ_16K       (16000U)
 

@@ -15,6 +15,8 @@
 #include <gui/audioplayer_screen/audioPlayerPresenter.hpp>
 #include <gui/fatfstester_screen/fatFSTesterView.hpp>
 #include <gui/fatfstester_screen/fatFSTesterPresenter.hpp>
+#include <gui/ethernettester_screen/EthernetTesterView.hpp>
+#include <gui/ethernettester_screen/EthernetTesterPresenter.hpp>
 
 using namespace touchgfx;
 
