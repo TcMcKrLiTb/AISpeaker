@@ -46,7 +46,9 @@ add_executable(${CMAKE_PROJECT_NAME}
         Core/Src/audio_rec_play.c
         Core/Src/stm32746g_discovery_sdram.c
         Drivers/CMSIS/RTOS2/Template/cmsis_os1.c
-        Core/Src/ethernet_task.c)
+        Core/Src/httpserver-netconn.c
+        Core/Src/UDP_echoserver.c
+)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)

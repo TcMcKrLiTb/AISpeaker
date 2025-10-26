@@ -37,7 +37,11 @@
 #include "httpd.h"
 #include "retarget.h"
 #include "wm8994.h"
-#include "ethernet_task.h"
+#include "api.h"
+#include "httpserver-netconn.h"
+#include "stm32f7xx_hal.h"
+#include "lwip.h"
+#include "lwip/netif.h"
 
 /* USER CODE END Includes */
 
@@ -72,6 +76,9 @@
 #define MAX_BMP_FILE_NAME 15
 
 #define BUF_SIZE (16000 / 500 * 1000)
+
+#define UDP_ECHO_PORT  5005  // UDP监听端口（帖子用5005，测试时需匹配）
+#define BUFFER_SIZE    1024  // 数据缓冲区大小
 
 /* USER CODE END PD */
 
@@ -138,12 +145,12 @@ const osThreadAttr_t audioFillerTask_attributes = {
   .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for EthernetTask */
-osThreadId_t EthernetTaskHandle;
-const osThreadAttr_t EthernetTask_attributes = {
-  .name = "EthernetTask",
+/* Definitions for UDP_Echo_Task */
+osThreadId_t UDP_Echo_TaskHandle;
+const osThreadAttr_t UDP_Echo_Task_attributes = {
+  .name = "UDP_Echo_Task",
   .stack_size = 2048 * 4,
-  .priority = (osPriority_t) osPriorityRealtime,
+  .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for sdFileMutex */
 osMutexId_t sdFileMutexHandle;
@@ -195,18 +202,22 @@ void StartDefaultTask(void *argument);
 extern void TouchGFX_Task(void *argument);
 extern void videoTaskFunc(void *argument);
 extern void audioFiller_Task(void *argument);
-extern void StartEthernetTask(void *argument);
+void StartUDP_Echo_Task(void *argument);
 
 /* USER CODE BEGIN PFP */
 
 void GetManufacturerId(uint8_t *manufacturer_id);
 void EnableMemoryMappedMode(uint8_t manufacturer_id);
+extern void udpecho_init(void);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+// void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth)
+// {
+//   ethernetif_input(&gnetif);  // 把接收到的数据包交给LWIP处理
+// }
 /* USER CODE END 0 */
 
 /**
@@ -322,8 +333,8 @@ int main(void)
   /* creation of audioFillerTask */
   audioFillerTaskHandle = osThreadNew(audioFiller_Task, NULL, &audioFillerTask_attributes);
 
-  /* creation of EthernetTask */
-  EthernetTaskHandle = osThreadNew(StartEthernetTask, NULL, &EthernetTask_attributes);
+  /* creation of UDP_Echo_Task */
+  UDP_Echo_TaskHandle = osThreadNew(StartUDP_Echo_Task, NULL, &UDP_Echo_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -1193,6 +1204,7 @@ void StartDefaultTask(void *argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
+  // udpecho_init();
   //httpd_init();
   // struct udp_pcb *udpcb;
   // udpcb=udp_new();
@@ -1201,10 +1213,97 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osThreadTerminate(defaultTaskHandle);
   }
   /* USER CODE END 5 */
 }
+
+/* USER CODE BEGIN Header_StartUDP_Echo_Task */
+/**
+* @brief Function implementing the UDP_Echo_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartUDP_Echo_Task */
+void StartUDP_Echo_Task(void *argument)
+{
+  /* USER CODE BEGIN StartUDP_Echo_Task */
+  struct netconn *udp_conn = NULL;  // UDP连接结构体
+  struct netbuf *recv_buf = NULL;   // 接收数据缓冲区
+  err_t err;                        // LWIP错误码
+  ip_addr_t client_ip;              // 客户端IP地址
+  uint16_t client_port;             // 客户端端口
+  uint8_t recv_data[BUFFER_SIZE] = {0};  // 接收数据缓存
+  uint16_t recv_len = 0;            // 接收数据长度
+  // 1. 创建UDP连接（NETCONN_UDP表示UDP类型）
+  udp_conn = netconn_new(NETCONN_UDP);
+  if (udp_conn == NULL)
+  {
+    printf("UDP连接创建失败！\r\n");
+    for(;;) { osDelay(1000); }  // 创建失败，死循环防止任务异常
+  }
+  printf("UDP连接创建成功！\r\n");
+
+  // 2. 绑定端口（将UDP连接绑定到指定IP和端口，IP设为IP_ADDR_ANY表示监听所有网卡）
+  err = netconn_bind(udp_conn, IP_ADDR_ANY, UDP_ECHO_PORT);
+  if (err != ERR_OK)
+  {
+    printf("UDP端口绑定失败！错误码：%d\r\n", err);
+    netconn_delete(udp_conn);  // 绑定失败，删除连接
+    for(;;) { osDelay(1000); }
+  }
+  printf("UDP已绑定端口：%d，等待数据...\r\n", UDP_ECHO_PORT);
+
+  // 3. 循环接收并处理UDP数据（任务主循环）
+  for(;;)
+  {
+    // 接收数据（netconn_recv是阻塞函数，有数据才返回，无需额外延时）
+    err = netconn_recv(udp_conn, &recv_buf);
+    if (err == ERR_OK && recv_buf != NULL)
+    {
+      // 获取客户端IP和端口（后续回声需用）
+      client_ip = *netbuf_fromaddr(recv_buf);
+      client_port = netbuf_fromport(recv_buf);
+      // 提取接收数据（netbuf_data获取数据指针和长度）
+      netbuf_data(recv_buf, (void**)&recv_data, &recv_len);
+
+      // 打印接收信息（串口调试用）
+      printf("收到来自 %d.%d.%d.%d:%d 的数据，长度：%d 字节，内容：%s\r\n",
+             ip4_addr1(&client_ip), ip4_addr2(&client_ip),
+             ip4_addr3(&client_ip), ip4_addr4(&client_ip),
+             client_port, recv_len, recv_data);
+
+      // 4. 发送回声数据（将接收的数据原样发回客户端）
+      err = netconn_sendto(udp_conn, recv_buf, &client_ip, client_port);
+      if (err != ERR_OK)
+      {
+        printf("UDP发送失败！错误码：%d\r\n", err);
+      }
+      else
+      {
+        printf("已回声数据到客户端\r\n");
+      }
+
+      // 释放接收缓冲区（必须释放，避免内存泄漏）
+      netbuf_delete(recv_buf);
+      recv_len = 0;  // 重置接收长度
+      memset(recv_data, 0, BUFFER_SIZE);  // 清空缓存
+    }
+    else if (err != ERR_OK)
+    {
+      printf("UDP接收失败！错误码：%d\r\n", err);
+    }
+
+    // 小延时，避免任务过度占用CPU（可选，netconn_recv已阻塞）
+    osDelay(10);
+  }
+
+  // 5. 任务退出时清理（实际不会执行，因为循环是死循环）
+  netconn_delete(udp_conn);
+  osThreadTerminate(NULL);
+}
+  /* USER CODE END StartUDP_Echo_Task */
+
 
  /* MPU Configuration */
 
