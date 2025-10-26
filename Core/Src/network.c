@@ -52,6 +52,8 @@ void doPostRequest()
         osDelay(1);
     }
 
+    dns_gethostbyname("dxxyzhxg.bjtu.edu.cn", &ipAddr, myDNSFountCallback, &finished);
+
     printf("Resolved IP: %s\r\n", ipaddr_ntoa(&ipAddr));
 }
 
