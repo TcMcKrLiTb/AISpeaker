@@ -37,6 +37,7 @@
 #include "httpd.h"
 #include "retarget.h"
 #include "wm8994.h"
+#include "ethernet_task.h"
 
 /* USER CODE END Includes */
 
@@ -137,6 +138,13 @@ const osThreadAttr_t audioFillerTask_attributes = {
   .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
+/* Definitions for EthernetTask */
+osThreadId_t EthernetTaskHandle;
+const osThreadAttr_t EthernetTask_attributes = {
+  .name = "EthernetTask",
+  .stack_size = 2048 * 4,
+  .priority = (osPriority_t) osPriorityRealtime,
+};
 /* Definitions for sdFileMutex */
 osMutexId_t sdFileMutexHandle;
 const osMutexAttr_t sdFileMutex_attributes = {
@@ -187,6 +195,7 @@ void StartDefaultTask(void *argument);
 extern void TouchGFX_Task(void *argument);
 extern void videoTaskFunc(void *argument);
 extern void audioFiller_Task(void *argument);
+extern void StartEthernetTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -312,6 +321,9 @@ int main(void)
 
   /* creation of audioFillerTask */
   audioFillerTaskHandle = osThreadNew(audioFiller_Task, NULL, &audioFillerTask_attributes);
+
+  /* creation of EthernetTask */
+  EthernetTaskHandle = osThreadNew(StartEthernetTask, NULL, &EthernetTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
