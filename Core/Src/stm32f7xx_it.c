@@ -187,7 +187,7 @@ void HardFault_Handler(void)
         HAL_UART_Transmit(&huart1, (uint8_t*)printStr, strLen, HAL_MAX_DELAY);
     }
 
-    /* USER CODE END HardFault_IRQn 0 */
+  /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */

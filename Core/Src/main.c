@@ -34,6 +34,7 @@
 #include "stm32746g_discovery_audio.h"
 #include "stm32746g_discovery_sdram.h"
 #include "audio_rec_play.h"
+#include "httpd.h"
 #include "retarget.h"
 #include "wm8994.h"
 
@@ -1178,9 +1179,13 @@ void EnableMemoryMappedMode(uint8_t manufacturer_id)
 void StartDefaultTask(void *argument)
 {
   /* init code for LWIP */
-//  MX_LWIP_Init();
+  MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
-
+  //httpd_init();
+  // struct udp_pcb *udpcb;
+  // udpcb=udp_new();
+  // udp_bind(udpcb, IPADDR_ANY,9000);
+  // udp_recv(udpcb, udp_rec_cbk,NULL);
   /* Infinite loop */
   for(;;)
   {
