@@ -17,19 +17,19 @@ public:
 
     virtual void changeToStartScreen()
     {
-        gotoaudioRecorderScreenNoTransition();
+        gotoEthernetTesterScreenNoTransition();
     }
 
-    // audioRecorder
-    void gotoaudioRecorderScreenNoTransition();
+    // EthernetTester
+    void gotoEthernetTesterScreenNoTransition();
 
 protected:
     touchgfx::Callback<FrontendApplicationBase> transitionCallback;
     FrontendHeap& frontendHeap;
     Model& model;
 
-    // audioRecorder
-    void gotoaudioRecorderScreenNoTransitionImpl();
+    // EthernetTester
+    void gotoEthernetTesterScreenNoTransitionImpl();
 };
 
 #endif // FRONTENDAPPLICATIONBASE_HPP

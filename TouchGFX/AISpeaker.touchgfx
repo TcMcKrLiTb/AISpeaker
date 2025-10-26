@@ -557,9 +557,32 @@
             "Width": 480,
             "Height": 272,
             "RelativeFilename": "__generated\\clay_theme_images_backgrounds_480x272_rays.png"
+          },
+          {
+            "Type": "Button",
+            "Name": "button1",
+            "X": 120,
+            "Y": 111,
+            "Width": 240,
+            "Height": 50,
+            "Pressed": "__generated\\alternate_theme_images_widgets_button_regular_height_50_medium_rounded_pressed.png",
+            "Released": "__generated\\alternate_theme_images_widgets_button_regular_height_50_medium_rounded_normal.png",
+            "Preset": "alternate_theme\\presets\\button\\regular\\height_50\\medium_rounded_normal.json"
           }
         ],
-        "Interactions": []
+        "Interactions": [
+          {
+            "InteractionName": "Interaction1",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "button1"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "function1"
+            }
+          }
+        ]
       }
     ],
     "CustomContainerDefinitions": [
@@ -637,7 +660,7 @@
       "Height": 272
     },
     "SelectedColorDepth": 16,
-    "StartupScreenName": "audioRecorder",
+    "StartupScreenName": "EthernetTester",
     "SelectedStartupLanguage": "GB",
     "TouchGfxPath": "../Middlewares/ST/touchgfx",
     "UIPath": ".",

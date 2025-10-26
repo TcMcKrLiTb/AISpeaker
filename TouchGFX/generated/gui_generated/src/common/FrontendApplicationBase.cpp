@@ -35,15 +35,15 @@ FrontendApplicationBase::FrontendApplicationBase(Model& m, FrontendHeap& heap)
  * Screen Transition Declarations
  */
 
-// audioRecorder
+// EthernetTester
 
-void FrontendApplicationBase::gotoaudioRecorderScreenNoTransition()
+void FrontendApplicationBase::gotoEthernetTesterScreenNoTransition()
 {
-    transitionCallback = touchgfx::Callback<FrontendApplicationBase>(this, &FrontendApplicationBase::gotoaudioRecorderScreenNoTransitionImpl);
+    transitionCallback = touchgfx::Callback<FrontendApplicationBase>(this, &FrontendApplicationBase::gotoEthernetTesterScreenNoTransitionImpl);
     pendingScreenTransitionCallback = &transitionCallback;
 }
 
-void FrontendApplicationBase::gotoaudioRecorderScreenNoTransitionImpl()
+void FrontendApplicationBase::gotoEthernetTesterScreenNoTransitionImpl()
 {
-    touchgfx::makeTransition<audioRecorderView, audioRecorderPresenter, touchgfx::NoTransition, Model >(&currentScreen, &currentPresenter, frontendHeap, &currentTransition, &model);
+    touchgfx::makeTransition<EthernetTesterView, EthernetTesterPresenter, touchgfx::NoTransition, Model >(&currentScreen, &currentPresenter, frontendHeap, &currentTransition, &model);
 }
