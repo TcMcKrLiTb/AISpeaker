@@ -17,19 +17,19 @@ public:
 
     virtual void changeToStartScreen()
     {
-        gotoEthernetTesterScreenNoTransition();
+        gotoAISpeakerPageScreenNoTransition();
     }
 
-    // EthernetTester
-    void gotoEthernetTesterScreenNoTransition();
+    // AISpeakerPage
+    void gotoAISpeakerPageScreenNoTransition();
 
 protected:
     touchgfx::Callback<FrontendApplicationBase> transitionCallback;
     FrontendHeap& frontendHeap;
     Model& model;
 
-    // EthernetTester
-    void gotoEthernetTesterScreenNoTransitionImpl();
+    // AISpeakerPage
+    void gotoAISpeakerPageScreenNoTransitionImpl();
 };
 
 #endif // FRONTENDAPPLICATIONBASE_HPP

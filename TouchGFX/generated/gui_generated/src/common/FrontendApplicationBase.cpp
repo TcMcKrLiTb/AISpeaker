@@ -17,6 +17,8 @@
 #include <gui/fatfstester_screen/fatFSTesterPresenter.hpp>
 #include <gui/ethernettester_screen/EthernetTesterView.hpp>
 #include <gui/ethernettester_screen/EthernetTesterPresenter.hpp>
+#include <gui/aispeakerpage_screen/AISpeakerPageView.hpp>
+#include <gui/aispeakerpage_screen/AISpeakerPagePresenter.hpp>
 
 using namespace touchgfx;
 
@@ -35,15 +37,15 @@ FrontendApplicationBase::FrontendApplicationBase(Model& m, FrontendHeap& heap)
  * Screen Transition Declarations
  */
 
-// EthernetTester
+// AISpeakerPage
 
-void FrontendApplicationBase::gotoEthernetTesterScreenNoTransition()
+void FrontendApplicationBase::gotoAISpeakerPageScreenNoTransition()
 {
-    transitionCallback = touchgfx::Callback<FrontendApplicationBase>(this, &FrontendApplicationBase::gotoEthernetTesterScreenNoTransitionImpl);
+    transitionCallback = touchgfx::Callback<FrontendApplicationBase>(this, &FrontendApplicationBase::gotoAISpeakerPageScreenNoTransitionImpl);
     pendingScreenTransitionCallback = &transitionCallback;
 }
 
-void FrontendApplicationBase::gotoEthernetTesterScreenNoTransitionImpl()
+void FrontendApplicationBase::gotoAISpeakerPageScreenNoTransitionImpl()
 {
-    touchgfx::makeTransition<EthernetTesterView, EthernetTesterPresenter, touchgfx::NoTransition, Model >(&currentScreen, &currentPresenter, frontendHeap, &currentTransition, &model);
+    touchgfx::makeTransition<AISpeakerPageView, AISpeakerPagePresenter, touchgfx::NoTransition, Model >(&currentScreen, &currentPresenter, frontendHeap, &currentTransition, &model);
 }
