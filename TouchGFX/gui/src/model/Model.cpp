@@ -7,6 +7,7 @@
 #include "cmsis_os.h"
 
 extern osSemaphoreId saveFiniSemHandle;
+extern osSemaphoreId networkFiniSemHandle;
 
 #endif
 
@@ -22,6 +23,12 @@ void Model::tick()
     if (osSemaphoreWait(saveFiniSemHandle, 0) == osOK) {
         if (modelListener) {
             modelListener->saveCompleted();
+        }
+    }
+    // Network task finished
+    if (osSemaphoreWait(networkFiniSemHandle, 0) == osOK) {
+        if (modelListener) {
+            modelListener->networkTaskCompleted();
         }
     }
 #endif

@@ -16,6 +16,7 @@ public:
     void stopTalk() override;
 
     virtual void saveCompleted();
+    virtual void networkCompleted();
 
 protected:
 };

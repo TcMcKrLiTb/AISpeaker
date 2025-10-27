@@ -7,6 +7,7 @@
 #include "main.h"
 #include "../../../Drivers/BSP/Components/wm8994/wm8994.h"
 #include "audio_rec_play.h"
+#include "network.h"
 
 extern uint8_t audio_save_flag;
 extern uint8_t immediate_save;
@@ -85,6 +86,16 @@ void AISpeakerPageView::saveCompleted()
     }
     audio_save_flag = 0;
     printf("save completed!, file is: RECORDED%d.WAV\r\n", SavedFileNum);
+    startFileSending();
+#endif
+}
+
+void AISpeakerPageView::networkCompleted()
+{
+#ifndef SIMULATOR
+
+    printf("network task completed!\r\n");
+
 #endif
     animatedImage1.stopAnimation();
     animatedImage1.setVisible(false);

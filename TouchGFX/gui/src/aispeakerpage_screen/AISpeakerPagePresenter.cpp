@@ -21,3 +21,8 @@ void AISpeakerPagePresenter::saveCompleted()
 {
     view.saveCompleted();
 }
+
+void AISpeakerPagePresenter::networkTaskCompleted()
+{
+    view.networkCompleted();
+}

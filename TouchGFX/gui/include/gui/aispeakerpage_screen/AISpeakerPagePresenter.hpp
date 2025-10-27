@@ -28,6 +28,7 @@ public:
     virtual ~AISpeakerPagePresenter() {}
 
     virtual void saveCompleted();
+    virtual void networkTaskCompleted();
 
 private:
     AISpeakerPagePresenter();

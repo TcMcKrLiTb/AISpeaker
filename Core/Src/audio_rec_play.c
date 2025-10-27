@@ -36,6 +36,7 @@ extern osSemaphoreId audioSemHandle;
 extern osSemaphoreId stopRecordSemHandle;
 extern osSemaphoreId saveFiniSemHandle;
 extern osThreadId audioFillerTaskHandle;
+extern uint32_t nowFileSize;
 
 extern DMA_HandleTypeDef hdma_sai2_b;
 
@@ -261,6 +262,7 @@ static uint32_t SaveDataToSDCard()
     // RIFF header
     memcpy(wavHeader, "RIFF", 4);
     uint32_t fileSize = buffer_ctl.fptr + 36;
+    nowFileSize = fileSize + 8;
     wavHeader[4] = (uint8_t)(fileSize & 0xFF);
     wavHeader[5] = (uint8_t)((fileSize >> 8) & 0xFF);
     wavHeader[6] = (uint8_t)((fileSize >> 16) & 0xFF);

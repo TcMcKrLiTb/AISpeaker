@@ -101,6 +101,7 @@ osThreadId audioFillerTaskHandle;
 osSemaphoreId audioSemHandle;
 osSemaphoreId stopRecordSemHandle;
 osSemaphoreId saveFiniSemHandle;
+osSemaphoreId networkFiniSemHandle;
 /* USER CODE BEGIN PV */
 
 static FMC_SDRAM_CommandTypeDef Command;
@@ -159,7 +160,7 @@ int main(void)
   SCB_EnableICache();
 
   /* Enable D-Cache---------------------------------------------------------*/
-  SCB_EnableDCache();
+  //SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -222,6 +223,10 @@ int main(void)
   /* definition and creation of saveFiniSem */
   osSemaphoreDef(saveFiniSem);
   saveFiniSemHandle = osSemaphoreCreate(osSemaphore(saveFiniSem), 1);
+
+  /* definition and creation of networkFiniSem */
+  osSemaphoreDef(networkFiniSem);
+  networkFiniSemHandle = osSemaphoreCreate(osSemaphore(networkFiniSem), 1);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -1035,7 +1040,7 @@ void StartDefaultTask(void const * argument)
   /* USER CODE BEGIN 5 */
     // suspend audioFiller at First, start it when needed
     osThreadTerminate(audioFillerTaskHandle);
-    udp_init();
+//    udp_init();
   /* Infinite loop */
   for(;;)
   {
