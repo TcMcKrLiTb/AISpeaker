@@ -11,6 +11,12 @@ public:
     virtual ~AISpeakerPageView() {}
     virtual void setupScreen();
     virtual void tearDownScreen();
+
+    void startTalk() override;
+    void stopTalk() override;
+
+    virtual void saveCompleted();
+
 protected:
 };
 

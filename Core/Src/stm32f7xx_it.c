@@ -62,8 +62,6 @@ extern I2C_HandleTypeDef hi2c3;
 extern LTDC_HandleTypeDef hltdc;
 extern DMA_HandleTypeDef hdma_sai2_a;
 extern DMA_HandleTypeDef hdma_sai2_b;
-extern SAI_HandleTypeDef hsai_BlockA2;
-extern SAI_HandleTypeDef hsai_BlockB2;
 extern DMA_HandleTypeDef hdma_sdmmc1_rx;
 extern DMA_HandleTypeDef hdma_sdmmc1_tx;
 extern SD_HandleTypeDef hsd1;
@@ -353,21 +351,6 @@ void DMA2D_IRQHandler(void)
   /* USER CODE BEGIN DMA2D_IRQn 1 */
 
   /* USER CODE END DMA2D_IRQn 1 */
-}
-
-/**
-  * @brief This function handles SAI2 global interrupt.
-  */
-void SAI2_IRQHandler(void)
-{
-  /* USER CODE BEGIN SAI2_IRQn 0 */
-
-  /* USER CODE END SAI2_IRQn 0 */
-  HAL_SAI_IRQHandler(&hsai_BlockA2);
-  HAL_SAI_IRQHandler(&hsai_BlockB2);
-  /* USER CODE BEGIN SAI2_IRQn 1 */
-
-  /* USER CODE END SAI2_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

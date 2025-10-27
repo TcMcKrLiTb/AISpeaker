@@ -4,6 +4,7 @@
 
 #include "stm32746g_discovery_audio.h"
 #include "audio_rec_play.h"
+#include "cmsis_os.h"
 #include "wm8994.h"
 #include "fatfs.h"
 #include "main.h"
@@ -28,16 +29,20 @@ __IO uint8_t audio_out_error_flag;
 __IO uint8_t audio_in_error_flag;
 __IO uint8_t audio_pause_flag;
 __IO uint8_t audio_save_flag;
+__IO uint8_t immediate_save;
 ALIGN_32BYTES (AUDIO_BufferTypeDef  buffer_ctl);
 
 extern osSemaphoreId audioSemHandle;
 extern osSemaphoreId stopRecordSemHandle;
 extern osSemaphoreId saveFiniSemHandle;
+extern osThreadId audioFillerTaskHandle;
 
 extern DMA_HandleTypeDef hdma_sai2_b;
 
 // temperate buffer to storage some info
 uint8_t sector[512];
+
+void audioFiller_Task(const void *argument);
 
 static inline uint32_t ALIGN_DOWN_32(uint32_t x) { return x & ~31u; }
 static inline uint32_t ALIGN_UP_32(uint32_t x)   { return (x + 31u) & ~31u; }
@@ -231,7 +236,9 @@ static uint32_t SaveDataToSDCard()
         f_close(&SDFile);
         sdFileOpened = 0;
     }
-    if (f_mount(&SDFatFS, (TCHAR const*)"", 1)) {
+    retSD = f_mount(&SDFatFS, (TCHAR const*)"", 1);
+    if (retSD != FR_OK) {
+        printf("Failed to mount! ret:%d\r\n", retSD);
         return 1; // mount failed
     }
     do {
@@ -244,8 +251,9 @@ static uint32_t SaveDataToSDCard()
     } while (fno.fname[0] != 0 && ++SavedFileNum < 1000);
     snprintf((char *)sector, 100, "/Audio/%s", patternStr);
     retSD = f_open(&SDFile, (char *)sector, FA_CREATE_ALWAYS | FA_WRITE);
+    sdFileOpened = 1;
     if (retSD != FR_OK) {
-        printf("Failed to open file for recording save!\r\n");
+        printf("Failed to open file for recording save! ret:%d\r\nfile name is:%s\r\n", retSD, sector);
         return 1;
     }
     // write WAV header
@@ -284,7 +292,7 @@ static uint32_t SaveDataToSDCard()
     wavHeader[43] = (uint8_t)((buffer_ctl.fptr >> 24) & 0xFF);
     retSD = f_write(&SDFile, wavHeader, 44, &bw);
     if (retSD != FR_OK || bw < 44) {
-        printf("Failed to write WAV header!\r\n");
+        printf("Failed to write WAV header!ret:%d\r\nfile name is:%s\r\n", retSD, sector);
         f_close(&SDFile);
         sdFileOpened = 0;
         return 2;
@@ -292,17 +300,18 @@ static uint32_t SaveDataToSDCard()
     // write audio data
     retSD = f_write(&SDFile, (uint32_t *)AudioStartAddress, buffer_ctl.fptr, &bw);
     if (retSD != FR_OK || bw < buffer_ctl.fptr) {
-        printf("Failed to write audio data!\r\n");
+        printf("Failed to write audio data!ret:%d\r\nfile name is:%s\r\n", retSD, sector);
         f_close(&SDFile);
         sdFileOpened = 0;
         return 3;
     }
     retSD = f_close(&SDFile);
     if (retSD != FR_OK) {
-        printf("Failed to close file after recording save!\r\n");
+        printf("Failed to close file after recording save!ret:%d\r\n", retSD);
         sdFileOpened = 0;
         return 4;
     }
+    sdFileOpened = 0;
     return 0;
 }
 
@@ -404,6 +413,11 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
 
 uint8_t StartRecord()
 {
+    immediate_save = 0;
+
+    osThreadDef(audioFillerTask, audioFiller_Task, osPriorityHigh, 0, 2048);
+    audioFillerTaskHandle = osThreadCreate(osThread(audioFillerTask), NULL);
+
     if (BSP_AUDIO_IN_InitEx(INPUT_DEVICE_DIGITAL_MICROPHONE_2,
                             I2S_AUDIOFREQ_16K,
                             DEFAULT_AUDIO_IN_BIT_RESOLUTION,
@@ -418,11 +432,10 @@ uint8_t StartRecord()
     buffer_ctl.state = BUFFER_OFFSET_NONE;
     buffer_ctl.fptr = 0;
     audio_state = AUDIO_STATE_RECORDING;
-    BSP_AUDIO_IN_Record((uint16_t*)&buffer_ctl.buff[0], AUDIO_BLOCK_SIZE);
-    return 0;
+    return BSP_AUDIO_IN_Record((uint16_t*)&buffer_ctl.buff[0], AUDIO_BLOCK_SIZE);
 }
 
-void audioFiller_Task(void *argument)
+void audioFiller_Task(const void *argument)
 {
     uint32_t bytesRead;
     (void)argument;
@@ -438,12 +451,11 @@ void audioFiller_Task(void *argument)
 
         if (audio_in_error_flag) {
             audio_in_error_flag = 0;
-            printf("Audio ERROR callback occurred, stopping playback\r\n");
+            printf("Audio ERROR callback occurred, stopping record\r\n");
             BSP_AUDIO_IN_Stop(CODEC_PDWN_SW);
         }
 
         if (audio_save_flag) {
-            audio_save_flag = 0;
             printf("Saving recorded data to SD card...\r\n");
             if (SaveDataToSDCard() == 0) {
                 printf("Recording saved successfully!\r\n");
@@ -451,6 +463,7 @@ void audioFiller_Task(void *argument)
                 printf("Failed to save recording!\r\n");
             }
             osSemaphoreRelease(saveFiniSemHandle);
+            osThreadTerminate(audioFillerTaskHandle);
         }
 
         switch (audio_state) {
@@ -590,6 +603,10 @@ void audioFiller_Task(void *argument)
             }
             audio_state = AUDIO_STATE_IDLE;
             printf("Recording stopped by user!!\r\n");
+            if (immediate_save == 1) {
+                audio_save_flag = 1;
+                immediate_save = 0;
+            }
         }
     }
 }

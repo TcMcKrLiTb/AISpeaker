@@ -27,6 +27,8 @@ public:
 
     virtual ~audioRecorderPresenter() {}
 
+    virtual void saveCompleted();
+
 private:
     audioRecorderPresenter();
 

@@ -16,3 +16,8 @@ void AISpeakerPagePresenter::deactivate()
 {
 
 }
+
+void AISpeakerPagePresenter::saveCompleted()
+{
+    view.saveCompleted();
+}

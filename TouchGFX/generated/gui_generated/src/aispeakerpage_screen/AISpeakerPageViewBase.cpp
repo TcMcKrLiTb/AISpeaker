@@ -22,7 +22,7 @@ AISpeakerPageViewBase::AISpeakerPageViewBase() :
     startTalkButton.setAction(buttonCallback);
     add(startTalkButton);
 
-    stopTalkButton.setXY(357, 106);
+    stopTalkButton.setXY(359, 89);
     stopTalkButton.setBitmaps(touchgfx::Bitmap(BITMAP_LIGHT_THEME_IMAGES_WIDGETS_BUTTON_ICON_ROUNDED_TINY_FILL_NORMAL_ID), touchgfx::Bitmap(BITMAP_LIGHT_THEME_IMAGES_WIDGETS_BUTTON_ICON_ROUNDED_TINY_FILL_PRESSED_ID), touchgfx::Bitmap(BITMAP_ICON_THEME_IMAGES_AV_STOP_CIRCLE_40_40_E8F6FB_SVG_ID), touchgfx::Bitmap(BITMAP_ICON_THEME_IMAGES_ACTION_DONE_40_40_E8F6FB_SVG_ID));
     stopTalkButton.setIconXY(10, 10);
     stopTalkButton.setVisible(false);

@@ -614,8 +614,8 @@
           {
             "Type": "ButtonWithIcon",
             "Name": "stopTalkButton",
-            "X": 357,
-            "Y": 106,
+            "X": 359,
+            "Y": 89,
             "Width": 60,
             "Height": 60,
             "Visible": false,
