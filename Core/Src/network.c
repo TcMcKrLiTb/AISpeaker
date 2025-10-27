@@ -2,6 +2,7 @@
 // Created by 31613 on 2025/10/26.
 //
 
+#include <stdbool.h>
 #include <math.h>
 
 #include "network.h"
@@ -68,65 +69,42 @@ static int base64_decode(const char *in, size_t in_len, uint8_t *out, size_t out
 
     if (!table_init) {
         int i;
-        for (i = 0; i < 256; i++) {
-            b64_rev_table[i] = -1;
-        }
-        for (i = 0; i < 64; i++) {
-            b64_rev_table[(unsigned char)b64_table[i]] = i;
-        }
+        for (i = 0; i < 256; i++) b64_rev_table[i] = -1;
+        for (i = 0; i < 64; i++) b64_rev_table[(unsigned char)b64_table[i]] = i;
         table_init = 1;
     }
 
-    if (!in || !out) {
-        return -1;
-    }
-    if (in_len % 4 != 0) {
-        return -1;
-    }
+    if (!in || !out || in_len % 4 != 0) return -1;
 
     size_t out_len = (in_len / 4) * 3;
-    if (in_len > 0 && in[in_len - 1] == '=') {
-        out_len--;
-    }
-    if (in_len > 1 && in[in_len - 2] == '=') {
-        out_len--;
-    }
-    if (out_size < out_len) {
-        return -1;
-    }
+    if (in_len > 0 && in[in_len - 1] == '=') out_len--;
+    if (in_len > 1 && in[in_len - 2] == '=') out_len--;
+
+    if (out_size < out_len) return -1;
 
     size_t i = 0, o = 0;
     while (i < in_len) {
-        int v1 = b64_rev_table[(unsigned char)in[i++]];
-        int v2 = b64_rev_table[(unsigned char)in[i++]];
-        int v3 = b64_rev_table[(unsigned char)in[i++]];
-        int v4 = b64_rev_table[(unsigned char)in[i++]];
+        int v[4];
+        v[0] = b64_rev_table[(unsigned char)in[i++]];
+        v[1] = b64_rev_table[(unsigned char)in[i++]];
+        v[2] = b64_rev_table[(unsigned char)in[i++]];
+        v[3] = b64_rev_table[(unsigned char)in[i++]];
 
-        if (v1 < 0 || v2 < 0) {
-            return -1;
-        }
+        if (v[0] < 0 || v[1] < 0) return -1;
 
-        out[o++] = (uint8_t)((v1 << 2) | (v2 >> 4));
-
-        if (in[i - 2] != '=') {
-            if (v3 < 0) return -1;
-            out[o++] = (uint8_t)(((v2 & 0x0F) << 4) | (v3 >> 2));
+        out[o++] = (uint8_t)((v[0] << 2) | (v[1] >> 4));
+        if (v[2] >= 0) {
+            out[o++] = (uint8_t)(((v[1] & 0x0F) << 4) | (v[2] >> 2));
         } else {
-            if (in[i - 1] != '=') return -1;
-            break; // decode over
+            break;
         }
-
-        if (in[i - 1] != '=') {
-            if (v4 < 0) return -1;
-            out[o++] = (uint8_t)(((v3 & 0x03) << 6) | v4);
+        if (v[3] >= 0) {
+            out[o++] = (uint8_t)(((v[2] & 0x03) << 6) | v[3]);
         } else {
-            break; // decode over
+            break;
         }
     }
 
-    if (o != out_len) {
-        return -1;
-    }
     return (int)o;
 }
 
@@ -145,7 +123,6 @@ int connect_with_timeout(const char *ip, uint16_t port, int timeout_ms)
         return -1;
     }
 
-    /* 设置非阻塞 */
     int flags = fcntl(sock, F_GETFL, 0);
     if (flags < 0) flags = 0;
     fcntl(sock, F_SETFL, flags | O_NONBLOCK);
@@ -162,8 +139,6 @@ int connect_with_timeout(const char *ip, uint16_t port, int timeout_ms)
 
     int ret = connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr));
     if (ret == 0) {
-        /* 立刻连接成功（极少数情况） */
-        /* 恢复阻塞模式（可选）*/
         fcntl(sock, F_SETFL, flags);
         return sock;
     } else if (ret < 0) {
@@ -172,10 +147,7 @@ int connect_with_timeout(const char *ip, uint16_t port, int timeout_ms)
             close(sock);
             return -1;
         }
-        /* EINPROGRESS: 正常，继续用 select 等待完成 */
     }
-
-    /* 使用 select 等待写事件（表示 connect 完成或失败）*/
     fd_set wfds;
     FD_ZERO(&wfds);
     FD_SET(sock, &wfds);
@@ -185,7 +157,6 @@ int connect_with_timeout(const char *ip, uint16_t port, int timeout_ms)
 
     ret = select(sock + 1, NULL, &wfds, NULL, &tv);
     if (ret == 0) {
-        /* 超时 */
         printf("connect timeout after %d ms\n", timeout_ms);
         close(sock);
         return -1;
@@ -195,7 +166,6 @@ int connect_with_timeout(const char *ip, uint16_t port, int timeout_ms)
         return -1;
     }
 
-    /* 检查 socket 上的错误码 */
     int err = 0;
     socklen_t len = sizeof(err);
     if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &len) < 0) {
@@ -209,10 +179,9 @@ int connect_with_timeout(const char *ip, uint16_t port, int timeout_ms)
         return -1;
     }
 
-    /* 连接成功：恢复之前的 blocking 标志（可选）*/
     fcntl(sock, F_SETFL, flags);
 
-    return sock; /* 返回已连接的 socket 描述符 */
+    return sock;
 }
 
 static int send_all(int sock, const void *buf, size_t len)
@@ -316,12 +285,146 @@ void doPostRequest()
     closesocket(sock);
 }
 
+static char* buffer_find(char* buffer, int buf_len, const char* substr) {
+    if (!substr || !buffer || buf_len <= 0) return NULL;
+    int sub_len = strlen(substr);
+    if (sub_len == 0 || sub_len > buf_len) return NULL;
+    for (int i = 0; i <= buf_len - sub_len; ++i) {
+        if (memcmp(buffer + i, substr, sub_len) == 0) return buffer + i;
+    }
+    return NULL;
+}
+
+int process_server_response(int sock, const char* audio_filename, char* content_buffer, size_t content_buf_size) {
+    FIL audio_file; FRESULT fr; UINT bytes_written;
+    char stream_buf[STREAM_BUFFER_SIZE];
+    char b64_in_buf[BASE64_CHUNK_SIZE];
+    uint8_t decoded_audio_buf[READ_CHUNK_SIZE];
+
+    int data_in_buf = 0; long current_chunk_size = 0;
+    int b64_idx = 0; int content_idx = 0;
+
+    ParserState state = STATE_HTTP_HEADER;
+    JsonParseState json_state = JSON_SEEK_FINISH_REASON;
+    bool connection_alive = true;
+
+    if (content_buffer && content_buf_size > 0) content_buffer[0] = '\0';
+
+    fr = f_open(&audio_file, audio_filename, FA_CREATE_ALWAYS | FA_WRITE);
+    if (fr != FR_OK) { return -1; }
+
+    while (state != STATE_DONE && state != STATE_ERROR) {
+        int bytes_consumed = 0;
+        char* p_buf = stream_buf;
+
+        // 步骤 1: 尝试用当前缓冲区的数据进行解析
+        switch (state) {
+            case STATE_HTTP_HEADER: {
+                char* body_start = buffer_find(p_buf, data_in_buf, "\r\n\r\n");
+                if (body_start) {
+                    if (!buffer_find(p_buf, (body_start-p_buf), "HTTP/1.1 200 OK")) { state = STATE_ERROR; break; }
+                    bytes_consumed = (body_start - p_buf) + 4;
+                    state = STATE_CHUNK_SIZE;
+                    printf("Debug: HTTP Header found, consumed %d bytes.\r\n", bytes_consumed);
+                }
+                break;
+            }
+            case STATE_CHUNK_SIZE: {
+                char* eol = buffer_find(p_buf, data_in_buf, "\r\n");
+                if (eol) {
+                    *eol = '\0'; current_chunk_size = strtol(p_buf, NULL, 16); *eol = '\r';
+                    bytes_consumed = (eol - p_buf) + 2;
+                    state = (current_chunk_size > 0) ? STATE_CHUNK_DATA : STATE_DONE;
+                    printf("Debug: Found chunk size: %ld, consumed %d bytes.\r\n", current_chunk_size, bytes_consumed);
+                }
+                break;
+            }
+            case STATE_CHUNK_DATA: {
+                int data_to_process = (data_in_buf < current_chunk_size) ? data_in_buf : (int)current_chunk_size;
+                char* data_end = p_buf + data_to_process;
+                char* current_ptr = p_buf;
+
+                // ... (JSON解析逻辑与之前类似，但现在在一个指针上操作) ...
+                if (json_state == JSON_SEEK_FINISH_REASON) { if (buffer_find(current_ptr, data_end - current_ptr, "\"finish_reason\":\"stop\"")) { json_state = JSON_SEEK_AUDIO_DATA_KEY; } else if (buffer_find(current_ptr, data_end - current_ptr, "\"finish_reason\"")) { state = STATE_ERROR; break; }}
+                if (json_state == JSON_SEEK_AUDIO_DATA_KEY) { char* key_pos = buffer_find(current_ptr, data_end - current_ptr, "\"data\":\""); if (key_pos) { current_ptr = key_pos + strlen("\"data\":\""); json_state = JSON_STREAM_AUDIO_DATA; }}
+                if (json_state == JSON_STREAM_AUDIO_DATA) { while(current_ptr < data_end) { if(*current_ptr == '"') {json_state = JSON_SEEK_CONTENT_KEY; break;} b64_in_buf[b64_idx++]=*current_ptr++; if(b64_idx == BASE64_CHUNK_SIZE){int d=base64_decode(b64_in_buf,BASE64_CHUNK_SIZE,decoded_audio_buf,READ_CHUNK_SIZE);if(d>0)f_write(&audio_file,decoded_audio_buf,d,&bytes_written);b64_idx=0;} }}
+                if (json_state == JSON_SEEK_CONTENT_KEY) { char* key_pos = buffer_find(current_ptr, data_end - current_ptr, "\"content\":\""); if (key_pos) { current_ptr = key_pos + strlen("\"content\":\""); json_state = JSON_STREAM_CONTENT; }}
+                if (json_state == JSON_STREAM_CONTENT) { while(current_ptr < data_end) { if(*current_ptr == '"') {json_state = JSON_COMPLETE; break;} if(content_idx < content_buf_size - 1) content_buffer[content_idx++] = *current_ptr; current_ptr++; } content_buffer[content_idx] = '\0';}
+
+                bytes_consumed = current_ptr - p_buf;
+                current_chunk_size -= bytes_consumed;
+                if (current_chunk_size <= 0) {
+                    state = STATE_TRAILER;
+                    printf("Debug: Chunk data finished.\r\n");
+                }
+                break;
+            }
+            case STATE_TRAILER: {
+                if (data_in_buf >= 2 && p_buf[0] == '\r' && p_buf[1] == '\n') {
+                    bytes_consumed = 2;
+                    state = STATE_CHUNK_SIZE;
+                    printf("Debug: Found chunk trailer, consumed 2 bytes.\r\n");
+                }
+                break;
+            }
+            default: break;
+        }
+
+        // 步骤 2: 如果成功消耗了字节，更新缓冲区并立即再次尝试解析
+        if (bytes_consumed > 0) {
+            if (data_in_buf > bytes_consumed) {
+                memmove(stream_buf, stream_buf + bytes_consumed, data_in_buf - bytes_consumed);
+            }
+            data_in_buf -= bytes_consumed;
+            continue; // 立即进行下一次循环，处理缓冲区中的剩余数据
+        }
+
+        // 步骤 3: 如果没有消耗字节（数据不足），则尝试从网络读取更多数据
+        if (connection_alive && data_in_buf < STREAM_BUFFER_SIZE) {
+            printf("Debug: Need more data. data_in_buf: %d, state: %d\r\n", data_in_buf, state);
+            int bytes_read = recv(sock, stream_buf + data_in_buf, STREAM_BUFFER_SIZE - data_in_buf, 0);
+            if (bytes_read < 0) {
+                printf("Error: recv failed with error code.\r\n");
+                state = STATE_ERROR;
+            } else if (bytes_read == 0) {
+                printf("Debug: Connection closed by peer.\r\n");
+                connection_alive = false;
+            } else {
+                data_in_buf += bytes_read;
+            }
+        } else {
+            // 步骤 4: 如果无法读取更多数据（连接已关或缓冲区已满），并且解析仍未完成，则判定为错误
+            if (state != STATE_DONE) {
+                printf("Error: Parser stalled. connection_alive: %d, data_in_buf: %d, state: %d\r\n", connection_alive, data_in_buf, state);
+                state = STATE_ERROR;
+            }
+        }
+    }
+
+    // ... (清理和返回逻辑与之前相同) ...
+    if (b64_idx > 0) {
+        if (b64_idx % 4 == 0) {
+            int decoded = base64_decode(b64_in_buf, b64_idx, decoded_audio_buf, READ_CHUNK_SIZE);
+            if (decoded > 0) f_write(&audio_file, decoded_audio_buf, decoded, &bytes_written);
+        } else { printf("Warning: Trailing Base64 data is not a multiple of 4.\r\n"); }
+    }
+    f_close(&audio_file);
+
+    if (state == STATE_DONE) {
+        printf("Successfully processed the complete stream.\r\n");
+        return 0;
+    } else {
+        printf("Finished with error state.\r\n");
+        return -1;
+    }
+}
+
 int send_file_base64_over_socket(int sock,
                                  const char *filename,
                                  char *request_buffer,
                                  size_t request_buffer_size)
 {
-    if (request_buffer_size < OUTBUF_SIZE) return -1; // 要求最小 buffer
+    if (request_buffer_size < OUTBUF_SIZE) return -1;
 
     UINT br;
 
@@ -336,7 +439,7 @@ int send_file_base64_over_socket(int sock,
     size_t encoded_out_max = request_buffer_size;
 
     for (;;) {
-        retSD = f_read(&SDFile, data_in, READ_CHUNK_SIZE, &br); // br = 实际读到的 bytes
+        retSD = f_read(&SDFile, data_in, READ_CHUNK_SIZE, &br);
         if (retSD != FR_OK) {
             printf("f_read failed: %d\r\n", retSD);
             f_close(&SDFile);
@@ -434,7 +537,6 @@ void doSendAudioToZhiPuServer()
                               "\r\n",
                               path, body_length);
 
-    printf("Request Header:\r\n%s", request_buffer);
     if (header_len < 0 || header_len >= (int) sizeof(request_buffer)) {
         printf("wrong header length\r\n");
         return;
@@ -450,19 +552,26 @@ void doSendAudioToZhiPuServer()
 
     // send audio data in base64
     snprintf(fileName, 40, "/Audio/RECORDED%d.WAV", SavedFileNum);
-    printf("now file name: %s", fileName);
+    printf("now file name: %s\r\n", fileName);
 
     send_file_base64_over_socket(sock, fileName, request_buffer, sizeof(request_buffer));
 
     // send body part2
     send_all(sock, json_body_part2, strlen(json_body_part2));
 
-    char buf[1024];
-    ssize_t r;
-    while ((r = recv(sock, buf, sizeof(buf)-1, 0)) > 0) {
-        buf[r] = '\0';
-        printf("%s", buf);
+
+    char received_content[OUTBUF_SIZE];
+    const char* target_filename = "received_audio.wav";
+
+    int result = process_server_response(sock, target_filename,
+                                         received_content, OUTBUF_SIZE);
+
+    if (result == 0) {
+        printf("All successful!\r\n");
+    } else {
+        printf("Error occurred during processing: %d\r\n", result);
     }
+
     closesocket(sock);
 
     osSemaphoreRelease(networkFiniSemHandle);
@@ -488,7 +597,7 @@ void startFileSending(void)
 {
     taskParameters.taskType = 1;
 
-    osThreadDef(myNetworkTask, StartMyNetworkTask, osPriorityNormal, 0, 1024);
+    osThreadDef(myNetworkTask, StartMyNetworkTask, osPriorityNormal, 0, 4096);
     myNetworkTaskHandle = osThreadCreate(osThread(myNetworkTask), &taskParameters);
 }
 
