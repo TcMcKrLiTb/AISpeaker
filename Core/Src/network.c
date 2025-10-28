@@ -20,28 +20,24 @@ typedef struct {
     uint8_t taskType;
 } taskParameters_t;
 
-typedef struct {
-    uint8_t buffer[BUFFER_SIZE];
-    volatile size_t head;  // write pointer
-    volatile size_t tail;  // read pointer
-    osMutexId mutex;       // 互斥锁，保护 head 和 tail 指针
-    osSemaphoreId sem_data_available; // 信号量，通知消费者有数据了
-    osSemaphoreId sem_space_available; // 信号量，通知生产者有空间了
-} RingBuffer;
+struct {
+    uint8_t fileProcessBuf[FILE_PROCESS_BUFFER_SIZE];
+    uint32_t bufOffset, bufDataLen;
+    osSemaphoreId semDataAvailableHandle, semProcessOverHandle;
+}fileProcessCtl;
 
 osThreadId myNetworkTaskHandle;
 osThreadId networkReceiveTaskHandle;
 osThreadId fileWriterTaskHandle;
 static taskParameters_t taskParameters;
 __IO uint8_t dnsFinished = 0;
+uint8_t next[50]; // to hold the next info of pattern string
 uint32_t nowFileSize = 0;
-RingBuffer sharedRingBuffer;
 static const char b64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 extern uint16_t SavedFileNum;
 extern osSemaphoreId networkFiniSemHandle;
 
-static void networkReceiveTask(void const *argument);
 static void fileWriterTask(void const *argument);
 
 static int base64_encode(const uint8_t *in, size_t in_len, char *out, size_t out_size)
@@ -300,172 +296,95 @@ void doPostRequest()
     closesocket(sock);
 }
 
-static char* buffer_find(char* buffer, int buf_len, const char* substr) {
-    if (!substr || !buffer || buf_len <= 0) return NULL;
-    int sub_len = strlen(substr);
-    if (sub_len == 0 || sub_len > buf_len) return NULL;
-    for (int i = 0; i <= buf_len - sub_len; ++i) {
-        if (memcmp(buffer + i, substr, sub_len) == 0) return buffer + i;
+/**
+ * get next function for KMP algorithm
+ * @param s
+ * @param len
+ */
+void getNext(const char* s, const size_t len){
+    next[0] = 0;
+    int k = 0; //k = next[0]
+    for(int i = 1; i < len; i++){
+        while (k > 0 && s[i] != s[k])
+            k = next[k - 1]; //k = next[k-1]
+        if(s[i] == s[k])
+            k++;
+        next[i] = k; //next[j+1] = k+1 | next[j+1] = 0
     }
-    return NULL;
 }
 
-int read_from_ring_buffer(char* buf, int len) {
-    int bytes_read = 0;
-    for (int i = 0; i < len; i++) {
-        if (osSemaphoreWait(sharedRingBuffer.sem_data_available, 1000) != osOK) {
-            // with 1-second delay
-            // timeout or no data available
-            break;
-        }
-
-        osMutexWait(sharedRingBuffer.mutex, osWaitForever);
-        buf[i] = sharedRingBuffer.buffer[sharedRingBuffer.tail];
-        sharedRingBuffer.tail = (sharedRingBuffer.tail + 1) % BUFFER_SIZE;
-        osMutexRelease(sharedRingBuffer.mutex);
-
-        // announce that space is available
-        osSemaphoreRelease(sharedRingBuffer.sem_space_available);
-        bytes_read++;
+/**
+ * KMP algorithm to find substring S in T
+ * @param T
+ * @param lenT
+ * @param S
+ * @param lenS
+ * @return pos of S first appear in T, -1 if not found
+ */
+int kmp(const char *T, const size_t lenT, const char* S, const size_t lenS){
+    for (int i = 0, j = 0; i < lenT; i++) {
+        while (j > 0 && T[i] != S[j])
+            j = next[j - 1];
+        if (T[i] == S[j])
+            j++;
+        if(j == lenS)
+            return i - lenS + 1;
     }
-    return bytes_read;
+    return -1;
 }
 
-int process_server_response(int sock, const char* audio_filename, char* content_buffer, size_t content_buf_size) {
-    FIL audio_file; FRESULT fr; UINT bytes_written;
-    char stream_buf[STREAM_BUFFER_SIZE];
-    char b64_in_buf[BASE64_CHUNK_SIZE];
-    uint8_t decoded_audio_buf[READ_CHUNK_SIZE];
-
-    int data_in_buf = 0; long current_chunk_size = 0;
-    int b64_idx = 0; int content_idx = 0;
-
-    ParserState state = STATE_HTTP_HEADER;
-    JsonParseState json_state = JSON_SEEK_FINISH_REASON;
-    bool connection_alive = true;
-
-    if (content_buffer && content_buf_size > 0) content_buffer[0] = '\0';
-
-    fr = f_open(&audio_file, audio_filename, FA_CREATE_ALWAYS | FA_WRITE);
-    if (fr != FR_OK) { return -1; }
-
-    while (state != STATE_DONE && state != STATE_ERROR) {
-        int bytes_consumed = 0;
-        char* p_buf = stream_buf;
-
-        // 步骤 1: 尝试用当前缓冲区的数据进行解析
-        switch (state) {
-            case STATE_HTTP_HEADER: {
-                char* body_start = buffer_find(p_buf, data_in_buf, "\r\n\r\n");
-                if (body_start) {
-                    if (!buffer_find(p_buf, (body_start-p_buf), "HTTP/1.1 200 OK")) { state = STATE_ERROR; break; }
-                    bytes_consumed = (body_start - p_buf) + 4;
-                    state = STATE_CHUNK_SIZE;
-                    printf("Debug: HTTP Header found, consumed %d bytes.\r\n", bytes_consumed);
-                }
-                break;
-            }
-            case STATE_CHUNK_SIZE: {
-                char* eol = buffer_find(p_buf, data_in_buf, "\r\n");
-                if (eol) {
-                    *eol = '\0'; current_chunk_size = strtol(p_buf, NULL, 16); *eol = '\r';
-                    bytes_consumed = (eol - p_buf) + 2;
-                    state = (current_chunk_size > 0) ? STATE_CHUNK_DATA : STATE_DONE;
-                    printf("Debug: Found chunk size: %ld, consumed %d bytes.\r\n", current_chunk_size, bytes_consumed);
-                }
-                break;
-            }
-            case STATE_CHUNK_DATA: {
-                int data_to_process = (data_in_buf < current_chunk_size) ? data_in_buf : (int)current_chunk_size;
-                char* data_end = p_buf + data_to_process;
-                char* current_ptr = p_buf;
-
-                // ... (JSON解析逻辑与之前类似，但现在在一个指针上操作) ...
-                if (json_state == JSON_SEEK_FINISH_REASON) { if (buffer_find(current_ptr, data_end - current_ptr, "\"finish_reason\":\"stop\"")) { json_state = JSON_SEEK_AUDIO_DATA_KEY; } else if (buffer_find(current_ptr, data_end - current_ptr, "\"finish_reason\"")) { state = STATE_ERROR; break; }}
-                if (json_state == JSON_SEEK_AUDIO_DATA_KEY) { char* key_pos = buffer_find(current_ptr, data_end - current_ptr, "\"data\":\""); if (key_pos) { current_ptr = key_pos + strlen("\"data\":\""); json_state = JSON_STREAM_AUDIO_DATA; }}
-                if (json_state == JSON_STREAM_AUDIO_DATA) { while(current_ptr < data_end) { if(*current_ptr == '"') {json_state = JSON_SEEK_CONTENT_KEY; break;} b64_in_buf[b64_idx++]=*current_ptr++; if(b64_idx == BASE64_CHUNK_SIZE){int d=base64_decode(b64_in_buf,BASE64_CHUNK_SIZE,decoded_audio_buf,READ_CHUNK_SIZE);if(d>0)f_write(&audio_file,decoded_audio_buf,d,&bytes_written);b64_idx=0;} }}
-                if (json_state == JSON_SEEK_CONTENT_KEY) { char* key_pos = buffer_find(current_ptr, data_end - current_ptr, "\"content\":\""); if (key_pos) { current_ptr = key_pos + strlen("\"content\":\""); json_state = JSON_STREAM_CONTENT; }}
-                if (json_state == JSON_STREAM_CONTENT) { while(current_ptr < data_end) { if(*current_ptr == '"') {json_state = JSON_COMPLETE; break;} if(content_idx < content_buf_size - 1) content_buffer[content_idx++] = *current_ptr; current_ptr++; } content_buffer[content_idx] = '\0';}
-
-                bytes_consumed = current_ptr - p_buf;
-                current_chunk_size -= bytes_consumed;
-                if (current_chunk_size <= 0) {
-                    state = STATE_TRAILER;
-                    printf("Debug: Chunk data finished.\r\n");
-                }
-                break;
-            }
-            case STATE_TRAILER: {
-                if (data_in_buf >= 2 && p_buf[0] == '\r' && p_buf[1] == '\n') {
-                    bytes_consumed = 2;
-                    state = STATE_CHUNK_SIZE;
-                    printf("Debug: Found chunk trailer, consumed 2 bytes.\r\n");
-                }
-                break;
-            }
-            default: break;
-        }
-
-        // 步骤 2: 如果成功消耗了字节，更新缓冲区并立即再次尝试解析
-        if (bytes_consumed > 0) {
-            if (data_in_buf > bytes_consumed) {
-                memmove(stream_buf, stream_buf + bytes_consumed, data_in_buf - bytes_consumed);
-            }
-            data_in_buf -= bytes_consumed;
-            continue; // 立即进行下一次循环，处理缓冲区中的剩余数据
-        }
-
-        // 步骤 3: 如果没有消耗字节（数据不足），则尝试从网络读取更多数据
-        if (connection_alive && data_in_buf < STREAM_BUFFER_SIZE) {
-            printf("Debug: Need more data. data_in_buf: %d, state: %d\r\n", data_in_buf, state);
-            int bytes_read = read_from_ring_buffer(stream_buf + data_in_buf, STREAM_BUFFER_SIZE - data_in_buf);
-            if (bytes_read < 0) {
-                printf("Error: recv failed with error code.\r\n");
-                state = STATE_ERROR;
-            } else if (bytes_read == 0) {
-                printf("Debug: Connection closed by peer.\r\n");
-                connection_alive = false;
-            } else {
-                data_in_buf += bytes_read;
-            }
+uint8_t processServerResponse(const int sock)
+{
+    uint8_t streamBuffer[STREAM_BUFFER_SIZE + 1];
+    uint16_t byteReceived = 0;
+    uint32_t nowPos = 0;
+    uint32_t nowChunkSize = 0;
+    byteReceived = recv(sock, streamBuffer, STREAM_BUFFER_SIZE, 0);
+    if (byteReceived < 0) {
+        printf("recv failed: %d\r\n", byteReceived);
+        return 1;
+    }
+    getNext("HTTP/1.1 ", 9);
+    int pos = kmp((const char *) streamBuffer, byteReceived, "HTTP/1.1 ", 9);
+    if (pos >= 0 && pos + 12 <= byteReceived) {
+        if (streamBuffer[pos + 9] == '2') {
+            printf("HTTP Response OK\r\n");
+            nowPos = pos + 6;
         } else {
-            // 步骤 4: 如果无法读取更多数据（连接已关或缓冲区已满），并且解析仍未完成，则判定为错误
-            if (state != STATE_DONE) {
-                printf("Error: Parser stalled. connection_alive: %d, data_in_buf: %d, state: %d\r\n", connection_alive, data_in_buf, state);
-                state = STATE_ERROR;
-            }
+            printf("HTTP Response Error: %.12s\r\n", (char*)&streamBuffer[pos]);
+            return 2;
         }
-    }
-
-    // ... (清理和返回逻辑与之前相同) ...
-    if (b64_idx > 0) {
-        if (b64_idx % 4 == 0) {
-            int decoded = base64_decode(b64_in_buf, b64_idx, decoded_audio_buf, READ_CHUNK_SIZE);
-            if (decoded > 0) f_write(&audio_file, decoded_audio_buf, decoded, &bytes_written);
-        } else { printf("Warning: Trailing Base64 data is not a multiple of 4.\r\n"); }
-    }
-    f_close(&audio_file);
-
-    if (state == STATE_DONE) {
-        printf("Successfully processed the complete stream.\r\n");
-        return 0;
     } else {
-        printf("Finished with error state.\r\n");
-        return -1;
+        printf("HTTP Response Not Found\r\n");
+        return 3;
     }
+    getNext("\r\n\r\n", 4);
+    pos = kmp((const char *)(streamBuffer + nowPos), byteReceived - nowPos, "\r\n\r\n", 4);
+    if (pos >= 0) {
+        nowPos += pos + 4;
+        printf("HTTP Header End Found\r\n");
+    } else {
+        printf("HTTP Header End Not Found\r\n");
+        return 4;
+    }
+    // let's start to process body yeyeye
+    printf("Response Body:\r\n%20s\r\n", (char *)(streamBuffer + nowPos));
+    return 0;
 }
 
-int send_file_base64_over_socket(int sock,
+int send_file_base64_over_socket(const int sock,
                                  const char *filename,
                                  char *request_buffer,
-                                 size_t request_buffer_size)
+                                 const size_t request_buffer_size)
 {
     if (request_buffer_size < OUTBUF_SIZE) return -1;
 
+    FIL sendFile;
     UINT br;
 
-    retSD = f_open(&SDFile, filename, FA_READ);
+    retSD = f_open(&sendFile, filename, FA_READ);
     if (retSD != FR_OK) {
+        f_close(&sendFile);
         printf("f_open failed: %d\r\n", retSD);
         return -2;
     }
@@ -475,10 +394,10 @@ int send_file_base64_over_socket(int sock,
     size_t encoded_out_max = request_buffer_size;
 
     for (;;) {
-        retSD = f_read(&SDFile, data_in, READ_CHUNK_SIZE, &br);
+        retSD = f_read(&sendFile, data_in, READ_CHUNK_SIZE, &br);
         if (retSD != FR_OK) {
             printf("f_read failed: %d\r\n", retSD);
-            f_close(&SDFile);
+            f_close(&sendFile);
             return -4;
         }
         if (br == 0) {
@@ -489,13 +408,13 @@ int send_file_base64_over_socket(int sock,
         int encoded_len = base64_encode(data_in, (size_t)br, encoded_out, encoded_out_max);
         if (encoded_len < 0) {
             printf("base64_encode: output buffer too small\r\n");
-            f_close(&SDFile);
+            f_close(&sendFile);
             return -5;
         }
 
         if (send_all(sock, encoded_out, (size_t)encoded_len) != 0) {
             printf("send_all failed\r\n");
-            f_close(&SDFile);
+            f_close(&sendFile);
             return -6;
         }
 
@@ -511,7 +430,7 @@ int send_file_base64_over_socket(int sock,
         }
     }
     printf("File sent successfully\r\n");
-    f_close(&SDFile);
+    f_close(&sendFile);
     return 0;
 }
 
@@ -594,78 +513,46 @@ void doSendAudioToZhiPuServer()
     // send body part2
     send_all(sock, json_body_part2, strlen(json_body_part2));
 
+    osSemaphoreDef(semDataAvailable);
+    fileProcessCtl.semDataAvailableHandle = osSemaphoreCreate(osSemaphore(semDataAvailable), 1);
+    osSemaphoreDef(semProcessOverHandle);
+    fileProcessCtl.semProcessOverHandle = osSemaphoreCreate(osSemaphore(semProcessOverHandle), 1);
+    // clear the semaphores
+    osSemaphoreWait(fileProcessCtl.semDataAvailableHandle, 0);
+    osSemaphoreWait(fileProcessCtl.semProcessOverHandle, 0);
 
-    char received_content[OUTBUF_SIZE];
-    const char* target_filename = "received_audio.wav";
+    osThreadDef(fileWriter, fileWriterTask, osPriorityHigh, 0, 2048);
+    fileWriterTaskHandle = osThreadCreate(osThread(fileWriter), NULL);
 
-    sharedRingBuffer.head = 0;
-    sharedRingBuffer.tail = 0;
-    osMutexDef(sharedRingBufferMutex);
-    sharedRingBuffer.mutex = osMutexCreate(osMutex(sharedRingBufferMutex));
-    osSemaphoreDef(sharedRingBufferDataAvailable);
-    sharedRingBuffer.sem_data_available = osSemaphoreCreate(osSemaphore(sharedRingBufferDataAvailable),
-                                                            1);
-    osSemaphoreDef(sharedRingBufferSpaceAvailable);
-    sharedRingBuffer.sem_space_available = osSemaphoreCreate(osSemaphore(sharedRingBufferSpaceAvailable),
-                                                             BUFFER_SIZE);
-    // clear the semaphores and mutex
-    osSemaphoreWait(sharedRingBuffer.sem_data_available, 0);
-    //    osSemaphoreWait(sharedRingBuffer.sem_space_available, 0);
+    const int result = processServerResponse(sock);
 
-    printf("initialize semaphore size is:%lu %lu", osSemaphoreGetCount(sharedRingBuffer.sem_data_available),
-           osSemaphoreGetCount(sharedRingBuffer.sem_space_available));
+    osThreadTerminate(fileWriterTaskHandle);
 
-    osThreadDef(networkReceiveTask, networkReceiveTask, osPriorityHigh, 0, 2048);
-    networkReceiveTaskHandle = osThreadCreate(osThread(networkReceiveTask), (void *)sock);
-
-    const int result = process_server_response(sock, target_filename,
-                                         received_content, OUTBUF_SIZE);
     if (result == 0) {
         printf("Server response processed successfully.\r\n");
-        printf("Received content: %s\r\n", received_content);
     } else {
         printf("Error processing server response.\r\n");
     }
     closesocket(sock);
 
-    osSemaphoreDelete(sharedRingBuffer.sem_data_available);
-    osSemaphoreDelete(sharedRingBuffer.sem_space_available);
-    osMutexDelete(sharedRingBuffer.mutex);
+    // delete the semaphores
+    osSemaphoreDelete(fileProcessCtl.semDataAvailableHandle);
+    osSemaphoreDelete(fileProcessCtl.semProcessOverHandle);
 
     osSemaphoreRelease(networkFiniSemHandle);
 }
 
-void networkReceiveTask(void const *argument) {
-    int sock = (int) argument;
-    uint8_t recv_temp_buf[1024];
-
-    while (1) {
-        int bytes_read = recv(sock, recv_temp_buf, 1024, 0);
-
-        if (bytes_read <= 0) {
-            // connecting closed or error
-            printf("Network receive task ending, bytes_read=%d\r\n", bytes_read);
-            osSemaphoreRelease(sharedRingBuffer.sem_data_available);
-            break;
-        }
-
-        for (int i = 0; i < bytes_read; i++) {
-            osSemaphoreWait(sharedRingBuffer.sem_space_available, osWaitForever);
-            osMutexWait(sharedRingBuffer.mutex, osWaitForever);
-            sharedRingBuffer.buffer[sharedRingBuffer.head] = recv_temp_buf[i];
-            sharedRingBuffer.head = (sharedRingBuffer.head + 1) % BUFFER_SIZE;
-            osMutexRelease(sharedRingBuffer.mutex);
-            // added new data, notify consumer
-            osSemaphoreRelease(sharedRingBuffer.sem_data_available);
-        }
+static void fileWriterTask(void const *argument)
+{
+    (void)argument;
+    for (;;) {
+        osDelay(1);
     }
-    // end the thread
-    osThreadTerminate(networkReceiveTaskHandle);
 }
 
 void StartMyNetworkTask(void const * argument)
 {
-    taskParameters_t* tempTaskParameters = (taskParameters_t*)argument;
+    const taskParameters_t* tempTaskParameters = (taskParameters_t*)argument;
     switch (tempTaskParameters->taskType) {
         case 0:
             doPostRequest();

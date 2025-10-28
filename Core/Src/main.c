@@ -1042,7 +1042,10 @@ void StartDefaultTask(void const * argument)
   /* USER CODE BEGIN 5 */
     // suspend audioFiller at First, start it when needed
     osThreadTerminate(audioFillerTaskHandle);
-//    udp_init();
+    retSD = f_mount(&SDFatFS, (TCHAR const*)"", 1);
+    if (retSD != FR_OK) {
+      printf("Failed to mount! ret:%d\r\n", retSD);
+    }
   /* Infinite loop */
   for(;;)
   {

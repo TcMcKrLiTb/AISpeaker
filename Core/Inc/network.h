@@ -1,10 +1,9 @@
 #ifndef __NETWORK_H__
 #define __NETWORK_H__
 
-#define STREAM_BUFFER_SIZE       2048 // process buffer size
-#define BUFFER_SIZE 4096       // ring buffer size, need to be double of STREAM_BUFFER_SIZE
+#define STREAM_BUFFER_SIZE        2048 // process buffer size
+#define FILE_PROCESS_BUFFER_SIZE  4080 // file read buffer size
 
-#define BASE64_CHUNK_SIZE        400  // Base64 input chunk size
 #define READ_CHUNK_SIZE 300   //  bytes read from file each time
 #define OUTBUF_SIZE     512   //  buffer size for base64 encoding
 

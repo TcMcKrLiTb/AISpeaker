@@ -56,21 +56,22 @@ static inline void INVALIDATE_DCACHE(void* addr, uint32_t len) {
 
 uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
 {
+    FIL headerFile;
     UINT br;
-    if (f_mount(&SDFatFS, (TCHAR const*)"", 1)) {
-        return 1; // mount failed
-    }
-    if (f_open(&SDFile, (TCHAR const*)WavName, FA_READ)) {
+    if (f_open(&headerFile, (TCHAR const*)WavName, FA_READ)) {
+        f_close(&headerFile);
         return 2; // open failed
     }
     sdFileOpened = 1;
-    retSD = f_lseek(&SDFile, 0);
+    retSD = f_lseek(&headerFile, 0);
     if (retSD != FR_OK) {
+        f_close(&headerFile);
         return 3; // seek failed
     }
-    retSD = f_read(&SDFile, sector, 44, &br);
+    retSD = f_read(&headerFile, sector, 44, &br);
 
     if (retSD != FR_OK || br < 44) {
+        f_close(&headerFile);
         return 4; // file is too small
     }
     // check "RIFF"
@@ -92,16 +93,18 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
     uint8_t foundData = 0;
     // start from RIFF chunk ended
     uint32_t filePos = 0xC;
-    retSD = f_lseek(&SDFile, filePos);
-    if (retSD != FR_OK)
+    retSD = f_lseek(&headerFile, filePos);
+    if (retSD != FR_OK) {
+        f_close(&headerFile);
         return 3; // seek failed
-
+    }
     while (1) {
         uint32_t chunkSize = 0;
         // read in chunk flag and size
-        retSD = f_read(&SDFile, sector, 8, &br);
-        if (retSD != FR_OK || br < 8)
+        retSD = f_read(&headerFile, sector, 8, &br);
+        if (retSD != FR_OK || br < 8) {
             break; // no more chunks
+        }
 
         if (strncmp("fmt ", (char*)sector, 4) == 0 && foundFmt == 0) {
             uint16_t audioFormat;
@@ -111,20 +114,28 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
             chunkSize |= (*(uint8_t *) (sector + 6)) << 16;
             chunkSize |= (*(uint8_t *) (sector + 7)) << 24;
             if (chunkSize < 16) {
+                f_close(&headerFile);
                 return 7; // fmt chunk is too short. hei hei
             }
             // jump above the fmt header
             filePos += 8;
-            retSD = f_lseek(&SDFile, filePos);
-            if (retSD != FR_OK)
+            retSD = f_lseek(&headerFile, filePos);
+            if (retSD != FR_OK) {
+                f_close(&headerFile);
                 return 3; // seek failed
+            }
             // read in fmt chunk
-            retSD = f_read(&SDFile, sector, chunkSize, &br);
-            if (retSD != FR_OK || br < chunkSize) // file is too small
+            retSD = f_read(&headerFile, sector, chunkSize, &br);
+            if (retSD != FR_OK || br < chunkSize) {
+                // file is too small
+                f_close(&headerFile);
                 return 4;
+            }
             audioFormat = *(uint8_t *)sector;
             audioFormat |= *(uint8_t*)(sector + 1) << 8;
-            if (audioFormat != 1) { // only support PCM encoding
+            if (audioFormat != 1) {
+                // only support PCM encoding
+                f_close(&headerFile);
                 return 8;
             }
             info->numChannels = *(uint8_t *)(sector + 2);
@@ -160,12 +171,14 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
             break;
         }
         // test next pos
-        retSD = f_lseek(&SDFile, filePos);
-        if (retSD != FR_OK)
+        retSD = f_lseek(&headerFile, filePos);
+        if (retSD != FR_OK) {
+            f_close(&headerFile);
             return 3; // seek failed
+        }
     }
 
-    retSD = f_close(&SDFile);
+    retSD = f_close(&headerFile);
     if (retSD != FR_OK)
         return 8; // close failed
     sdFileOpened = 0;
@@ -178,6 +191,7 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
 
 FRESULT SD_ReadToSDRAM_block(uint32_t file_offset, uint32_t sdram_write_pos, uint32_t bytes_to_read)
 {
+    FIL readInFile;
     FRESULT res;
     UINT br;
     uint32_t start = sdram_write_pos;
@@ -185,24 +199,24 @@ FRESULT SD_ReadToSDRAM_block(uint32_t file_offset, uint32_t sdram_write_pos, uin
 
     if ((start + bytes_to_read) > SDRAM_AUDIO_BLOCK_SIZE) {
         uint32_t first = SDRAM_AUDIO_BLOCK_SIZE - start;
-        res = f_lseek(&SDFile, file_offset);
+        res = f_lseek(&readInFile, file_offset);
         if (res != FR_OK) return res;
-        res = f_read(&SDFile, &external_buffer[start], first, &br); if (res != FR_OK) return res;
+        res = f_read(&readInFile, &external_buffer[start], first, &br); if (res != FR_OK) return res;
         if (br != first) return FR_INT_ERR;
 
         INVALIDATE_DCACHE(&external_buffer[start], first);
 
         uint32_t second = bytes_to_read - first;
-        res = f_read(&SDFile, &external_buffer[0], second, &br); if (res != FR_OK) return res;
+        res = f_read(&readInFile, &external_buffer[0], second, &br); if (res != FR_OK) return res;
         if (br != second) return FR_INT_ERR;
 
         INVALIDATE_DCACHE(&external_buffer[0], second);
 
         sdram_write_pos = second;
     } else {
-        res = f_lseek(&SDFile, file_offset);
+        res = f_lseek(&readInFile, file_offset);
         if (res != FR_OK) return res;
-        res = f_read(&SDFile, &external_buffer[start], bytes_to_read, &br); if (res != FR_OK) return res;
+        res = f_read(&readInFile, &external_buffer[start], bytes_to_read, &br); if (res != FR_OK) return res;
         if (br != bytes_to_read) return FR_INT_ERR;
 
         INVALIDATE_DCACHE(&external_buffer[start], bytes_to_read);
@@ -228,19 +242,15 @@ static uint32_t GetData(void *pdata, uint32_t offset, uint8_t *pbuf, uint32_t Nb
 
 static uint32_t SaveDataToSDCard()
 {
+    FIL saveFile;
     UINT bw;
     FILINFO fno;
     DIR dir;
     char patternStr[40];
     // open file
     if (sdFileOpened) {
-        f_close(&SDFile);
+        f_close(&saveFile);
         sdFileOpened = 0;
-    }
-    retSD = f_mount(&SDFatFS, (TCHAR const*)"", 1);
-    if (retSD != FR_OK) {
-        printf("Failed to mount! ret:%d\r\n", retSD);
-        return 1; // mount failed
     }
     do {
         snprintf(patternStr, 40, "RECORDED%d.WAV", SavedFileNum);
@@ -251,10 +261,12 @@ static uint32_t SaveDataToSDCard()
         }
     } while (fno.fname[0] != 0 && ++SavedFileNum < 1000);
     snprintf((char *)sector, 100, "/Audio/%s", patternStr);
-    retSD = f_open(&SDFile, (char *)sector, FA_CREATE_ALWAYS | FA_WRITE);
+    retSD = f_open(&saveFile, (char *)sector, FA_CREATE_ALWAYS | FA_WRITE);
     sdFileOpened = 1;
     if (retSD != FR_OK) {
         printf("Failed to open file for recording save! ret:%d\r\nfile name is:%s\r\n", retSD, sector);
+        f_close(&saveFile);
+        sdFileOpened = 0;
         return 1;
     }
     // write WAV header
@@ -292,22 +304,22 @@ static uint32_t SaveDataToSDCard()
     wavHeader[41] = (uint8_t)((buffer_ctl.fptr >> 8) & 0xFF);
     wavHeader[42] = (uint8_t)((buffer_ctl.fptr >> 16) & 0xFF);
     wavHeader[43] = (uint8_t)((buffer_ctl.fptr >> 24) & 0xFF);
-    retSD = f_write(&SDFile, wavHeader, 44, &bw);
+    retSD = f_write(&saveFile, wavHeader, 44, &bw);
     if (retSD != FR_OK || bw < 44) {
         printf("Failed to write WAV header!ret:%d\r\nfile name is:%s\r\n", retSD, sector);
-        f_close(&SDFile);
+        f_close(&saveFile);
         sdFileOpened = 0;
         return 2;
     }
     // write audio data
-    retSD = f_write(&SDFile, (uint32_t *)AudioStartAddress, buffer_ctl.fptr, &bw);
+    retSD = f_write(&saveFile, (uint32_t *)AudioStartAddress, buffer_ctl.fptr, &bw);
     if (retSD != FR_OK || bw < buffer_ctl.fptr) {
         printf("Failed to write audio data!ret:%d\r\nfile name is:%s\r\n", retSD, sector);
-        f_close(&SDFile);
+        f_close(&saveFile);
         sdFileOpened = 0;
         return 3;
     }
-    retSD = f_close(&SDFile);
+    retSD = f_close(&saveFile);
     if (retSD != FR_OK) {
         printf("Failed to close file after recording save!ret:%d\r\n", retSD);
         sdFileOpened = 0;
@@ -328,11 +340,9 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
 {
     FRESULT res;
     uint32_t bytesRead;
+    FIL startFile;
 
     if (sdFileOpened) {
-        f_close(&SDFile);
-        sdFileOpened = 0;
-    } else {
         sdFileOpened = 0;
     }
 
@@ -340,15 +350,16 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
         return 1; // wav header error
     }
     // openFile
-    res = f_open(&SDFile, path, FA_READ);
+    res = f_open(&startFile, path, FA_READ);
     if (res != FR_OK) {
+        f_close(&startFile);
         return 2; // open failed
     }
     sdFileOpened = 1;
 
     // only support 16-bit stereo PCM
     if (wavInfoNow.bitsPerSample != 16 || wavInfoNow.numChannels != 2) {
-        f_close(&SDFile);
+        f_close(&startFile);
         sdFileOpened = 0;
         return 3; // unsupported format
     }
@@ -361,12 +372,12 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
     // read all the file into SDRAM
     toRead = wavInfoNow.dataChunkSize;
     if (SD_ReadToSDRAM_block(wavInfoNow.dataChunkPos + sdFileReadOffset, 0, toRead) != FR_OK) {
-        f_close(&SDFile);
+        f_close(&startFile);
         sdFileOpened = 0;
         return 4; // read failed
     }
 
-    retSD = f_close(&SDFile);
+    retSD = f_close(&startFile);
     if (retSD != FR_OK)
         return 5; // close failed
     sdFileOpened = 0;
@@ -384,7 +395,7 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
     else {
         printf("AUDIO CODEC   FAILED \r\n");
         if (sdFileOpened) {
-            f_close(&SDFile);
+            f_close(&startFile);
             sdFileOpened = 0;
         }
         return 6; // audio init failed
