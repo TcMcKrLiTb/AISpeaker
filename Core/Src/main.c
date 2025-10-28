@@ -102,6 +102,7 @@ osSemaphoreId audioSemHandle;
 osSemaphoreId stopRecordSemHandle;
 osSemaphoreId saveFiniSemHandle;
 osSemaphoreId networkFiniSemHandle;
+osSemaphoreId testCountingSemHandle;
 /* USER CODE BEGIN PV */
 
 static FMC_SDRAM_CommandTypeDef Command;
@@ -158,9 +159,6 @@ int main(void)
 
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
-
-  /* Enable D-Cache---------------------------------------------------------*/
-  //SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -227,6 +225,10 @@ int main(void)
   /* definition and creation of networkFiniSem */
   osSemaphoreDef(networkFiniSem);
   networkFiniSemHandle = osSemaphoreCreate(osSemaphore(networkFiniSem), 1);
+
+  /* definition and creation of testCountingSem */
+  osSemaphoreDef(testCountingSem);
+  testCountingSemHandle = osSemaphoreCreate(osSemaphore(testCountingSem), 2);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */

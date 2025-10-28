@@ -20,14 +20,29 @@ typedef struct {
     uint8_t taskType;
 } taskParameters_t;
 
+typedef struct {
+    uint8_t buffer[BUFFER_SIZE];
+    volatile size_t head;  // write pointer
+    volatile size_t tail;  // read pointer
+    osMutexId mutex;       // 互斥锁，保护 head 和 tail 指针
+    osSemaphoreId sem_data_available; // 信号量，通知消费者有数据了
+    osSemaphoreId sem_space_available; // 信号量，通知生产者有空间了
+} RingBuffer;
+
 osThreadId myNetworkTaskHandle;
+osThreadId networkReceiveTaskHandle;
+osThreadId fileWriterTaskHandle;
 static taskParameters_t taskParameters;
 __IO uint8_t dnsFinished = 0;
 uint32_t nowFileSize = 0;
+RingBuffer sharedRingBuffer;
 static const char b64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 extern uint16_t SavedFileNum;
 extern osSemaphoreId networkFiniSemHandle;
+
+static void networkReceiveTask(void const *argument);
+static void fileWriterTask(void const *argument);
 
 static int base64_encode(const uint8_t *in, size_t in_len, char *out, size_t out_size)
 {
@@ -295,6 +310,27 @@ static char* buffer_find(char* buffer, int buf_len, const char* substr) {
     return NULL;
 }
 
+int read_from_ring_buffer(char* buf, int len) {
+    int bytes_read = 0;
+    for (int i = 0; i < len; i++) {
+        if (osSemaphoreWait(sharedRingBuffer.sem_data_available, 1000) != osOK) {
+            // with 1-second delay
+            // timeout or no data available
+            break;
+        }
+
+        osMutexWait(sharedRingBuffer.mutex, osWaitForever);
+        buf[i] = sharedRingBuffer.buffer[sharedRingBuffer.tail];
+        sharedRingBuffer.tail = (sharedRingBuffer.tail + 1) % BUFFER_SIZE;
+        osMutexRelease(sharedRingBuffer.mutex);
+
+        // announce that space is available
+        osSemaphoreRelease(sharedRingBuffer.sem_space_available);
+        bytes_read++;
+    }
+    return bytes_read;
+}
+
 int process_server_response(int sock, const char* audio_filename, char* content_buffer, size_t content_buf_size) {
     FIL audio_file; FRESULT fr; UINT bytes_written;
     char stream_buf[STREAM_BUFFER_SIZE];
@@ -382,7 +418,7 @@ int process_server_response(int sock, const char* audio_filename, char* content_
         // 步骤 3: 如果没有消耗字节（数据不足），则尝试从网络读取更多数据
         if (connection_alive && data_in_buf < STREAM_BUFFER_SIZE) {
             printf("Debug: Need more data. data_in_buf: %d, state: %d\r\n", data_in_buf, state);
-            int bytes_read = recv(sock, stream_buf + data_in_buf, STREAM_BUFFER_SIZE - data_in_buf, 0);
+            int bytes_read = read_from_ring_buffer(stream_buf + data_in_buf, STREAM_BUFFER_SIZE - data_in_buf);
             if (bytes_read < 0) {
                 printf("Error: recv failed with error code.\r\n");
                 state = STATE_ERROR;
@@ -542,10 +578,9 @@ void doSendAudioToZhiPuServer()
         return;
     }
 
-    int sock = connect_with_timeout(ipaddr_ntoa(&ipAddr), 80, 5000);
+    int sock = connect_with_timeout(ipaddr_ntoa(&ipAddr), 80, 3000);
 
     send_all(sock, request_buffer, header_len);
-
 
     // send body part1
     send_all(sock, json_body_part1, strlen(json_body_part1));
@@ -563,18 +598,69 @@ void doSendAudioToZhiPuServer()
     char received_content[OUTBUF_SIZE];
     const char* target_filename = "received_audio.wav";
 
-    int result = process_server_response(sock, target_filename,
+    sharedRingBuffer.head = 0;
+    sharedRingBuffer.tail = 0;
+    osMutexDef(sharedRingBufferMutex);
+    sharedRingBuffer.mutex = osMutexCreate(osMutex(sharedRingBufferMutex));
+    osSemaphoreDef(sharedRingBufferDataAvailable);
+    sharedRingBuffer.sem_data_available = osSemaphoreCreate(osSemaphore(sharedRingBufferDataAvailable),
+                                                            1);
+    osSemaphoreDef(sharedRingBufferSpaceAvailable);
+    sharedRingBuffer.sem_space_available = osSemaphoreCreate(osSemaphore(sharedRingBufferSpaceAvailable),
+                                                             BUFFER_SIZE);
+    // clear the semaphores and mutex
+    osSemaphoreWait(sharedRingBuffer.sem_data_available, 0);
+    //    osSemaphoreWait(sharedRingBuffer.sem_space_available, 0);
+
+    printf("initialize semaphore size is:%lu %lu", osSemaphoreGetCount(sharedRingBuffer.sem_data_available),
+           osSemaphoreGetCount(sharedRingBuffer.sem_space_available));
+
+    osThreadDef(networkReceiveTask, networkReceiveTask, osPriorityHigh, 0, 2048);
+    networkReceiveTaskHandle = osThreadCreate(osThread(networkReceiveTask), (void *)sock);
+
+    const int result = process_server_response(sock, target_filename,
                                          received_content, OUTBUF_SIZE);
-
     if (result == 0) {
-        printf("All successful!\r\n");
+        printf("Server response processed successfully.\r\n");
+        printf("Received content: %s\r\n", received_content);
     } else {
-        printf("Error occurred during processing: %d\r\n", result);
+        printf("Error processing server response.\r\n");
     }
-
     closesocket(sock);
 
+    osSemaphoreDelete(sharedRingBuffer.sem_data_available);
+    osSemaphoreDelete(sharedRingBuffer.sem_space_available);
+    osMutexDelete(sharedRingBuffer.mutex);
+
     osSemaphoreRelease(networkFiniSemHandle);
+}
+
+void networkReceiveTask(void const *argument) {
+    int sock = (int) argument;
+    uint8_t recv_temp_buf[1024];
+
+    while (1) {
+        int bytes_read = recv(sock, recv_temp_buf, 1024, 0);
+
+        if (bytes_read <= 0) {
+            // connecting closed or error
+            printf("Network receive task ending, bytes_read=%d\r\n", bytes_read);
+            osSemaphoreRelease(sharedRingBuffer.sem_data_available);
+            break;
+        }
+
+        for (int i = 0; i < bytes_read; i++) {
+            osSemaphoreWait(sharedRingBuffer.sem_space_available, osWaitForever);
+            osMutexWait(sharedRingBuffer.mutex, osWaitForever);
+            sharedRingBuffer.buffer[sharedRingBuffer.head] = recv_temp_buf[i];
+            sharedRingBuffer.head = (sharedRingBuffer.head + 1) % BUFFER_SIZE;
+            osMutexRelease(sharedRingBuffer.mutex);
+            // added new data, notify consumer
+            osSemaphoreRelease(sharedRingBuffer.sem_data_available);
+        }
+    }
+    // end the thread
+    osThreadTerminate(networkReceiveTaskHandle);
 }
 
 void StartMyNetworkTask(void const * argument)
