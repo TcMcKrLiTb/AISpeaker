@@ -22,8 +22,9 @@ typedef struct {
 
 struct {
     uint8_t fileProcessBuf[FILE_PROCESS_BUFFER_SIZE];
-    uint32_t bufOffset, bufDataLen;
-    osSemaphoreId semDataAvailableHandle, semProcessOverHandle;
+    __IO uint32_t firstBufDataLen, secondBufDataLen;
+    osSemaphoreId semBufHalfFullHandle, semBufFullHandle;
+    osSemaphoreId semBufHalfFiniHandle, semBufFullFiniHandle;
 }fileProcessCtl;
 
 osThreadId myNetworkTaskHandle;
@@ -31,6 +32,7 @@ osThreadId networkReceiveTaskHandle;
 osThreadId fileWriterTaskHandle;
 static taskParameters_t taskParameters;
 __IO uint8_t dnsFinished = 0;
+__IO bool gNetworkFinished = false;
 uint8_t next[50]; // to hold the next info of pattern string
 uint32_t nowFileSize = 0;
 static const char b64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -333,43 +335,210 @@ int kmp(const char *T, const size_t lenT, const char* S, const size_t lenS){
     return -1;
 }
 
+void copy_to_pingpong_buffer(const uint8_t* source, uint32_t length)
+{
+    uint32_t copiedBytes = 0;
+    while (copiedBytes < length) {
+        uint32_t remainingToCopy = length - copiedBytes;
+
+        // --- 严格按顺序：先尝试填满第一个缓冲区 ---
+
+        // 等待第一个缓冲区变为空闲
+        osSemaphoreWait(fileProcessCtl.semBufHalfFiniHandle, osWaitForever);
+
+        // 计算能放多少数据
+        uint32_t spaceInFirstBuf = FILE_PROCESS_HALF_BUFFER_SIZE - fileProcessCtl.firstBufDataLen;
+        uint32_t moveSize = (remainingToCopy < spaceInFirstBuf) ? remainingToCopy : spaceInFirstBuf;
+
+        if (moveSize > 0) {
+            memcpy(&fileProcessCtl.fileProcessBuf[fileProcessCtl.firstBufDataLen], source + copiedBytes, moveSize);
+            fileProcessCtl.firstBufDataLen += moveSize;
+            copiedBytes += moveSize;
+        }
+
+        // 如果第一个缓冲区满了，就通知文件线程；否则，把它标记为“仍然空闲”。
+        if (fileProcessCtl.firstBufDataLen == FILE_PROCESS_HALF_BUFFER_SIZE) {
+            osSemaphoreRelease(fileProcessCtl.semBufHalfFullHandle);
+        } else {
+            osSemaphoreRelease(fileProcessCtl.semBufHalfFiniHandle);
+        }
+
+        if (copiedBytes == length) break;
+        remainingToCopy = length - copiedBytes;
+
+
+        // --- 如果还有数据，再尝试填满第二个缓冲区 ---
+
+        osSemaphoreWait(fileProcessCtl.semBufFullFiniHandle, osWaitForever);
+
+        uint32_t spaceInSecondBuf = FILE_PROCESS_HALF_BUFFER_SIZE - fileProcessCtl.secondBufDataLen;
+        moveSize = (remainingToCopy < spaceInSecondBuf) ? remainingToCopy : spaceInSecondBuf;
+
+        if (moveSize > 0) {
+            memcpy(&fileProcessCtl.fileProcessBuf[FILE_PROCESS_HALF_BUFFER_SIZE + fileProcessCtl.secondBufDataLen], source + copiedBytes, moveSize);
+            fileProcessCtl.secondBufDataLen += moveSize;
+            copiedBytes += moveSize;
+        }
+
+        if (fileProcessCtl.secondBufDataLen == FILE_PROCESS_HALF_BUFFER_SIZE) {
+            osSemaphoreRelease(fileProcessCtl.semBufFullHandle);
+        } else {
+            osSemaphoreRelease(fileProcessCtl.semBufFullFiniHandle);
+        }
+    }
+}
+
 uint8_t processServerResponse(const int sock)
 {
     uint8_t streamBuffer[STREAM_BUFFER_SIZE + 1];
-    uint16_t byteReceived = 0;
+    uint32_t bytesInBuf = 0;
     uint32_t nowPos = 0;
     uint32_t nowChunkSize = 0;
-    byteReceived = recv(sock, streamBuffer, STREAM_BUFFER_SIZE, 0);
-    if (byteReceived < 0) {
-        printf("recv failed: %d\r\n", byteReceived);
+    ProcesserState nowState = STATE_PROCESS_FIRST_CHUNK;
+
+    fileProcessCtl.firstBufDataLen = fileProcessCtl.secondBufDataLen = 0;
+    gNetworkFinished = false;
+    bytesInBuf = recv(sock, streamBuffer, sizeof(streamBuffer), 0);
+    if (bytesInBuf <= 0) {
+        printf("recv error or connection closed\r\n");
         return 1;
     }
-    getNext("HTTP/1.1 ", 9);
-    int pos = kmp((const char *) streamBuffer, byteReceived, "HTTP/1.1 ", 9);
-    if (pos >= 0 && pos + 12 <= byteReceived) {
-        if (streamBuffer[pos + 9] == '2') {
-            printf("HTTP Response OK\r\n");
-            nowPos = pos + 6;
-        } else {
-            printf("HTTP Response Error: %.12s\r\n", (char*)&streamBuffer[pos]);
-            return 2;
-        }
-    } else {
-        printf("HTTP Response Not Found\r\n");
-        return 3;
+
+    getNext("HTTP/1.1 200 OK", 15);
+    int pos = kmp((const char *) streamBuffer, bytesInBuf, "HTTP/1.1 200 OK", 15);
+    if (pos < 0) {
+        printf("Response not OK\r\n");
+        return 2;
     }
     getNext("\r\n\r\n", 4);
-    pos = kmp((const char *)(streamBuffer + nowPos), byteReceived - nowPos, "\r\n\r\n", 4);
-    if (pos >= 0) {
-        nowPos += pos + 4;
-        printf("HTTP Header End Found\r\n");
-    } else {
-        printf("HTTP Header End Not Found\r\n");
-        return 4;
+    pos = kmp((const char *) streamBuffer, bytesInBuf, "\r\n\r\n", 4);
+    if (pos < 0) {
+        printf("No header-body separator found\r\n");
+        return 3;
     }
-    // let's start to process body yeyeye
-    printf("Response Body:\r\n%20s\r\n", (char *)(streamBuffer + nowPos));
-    return 0;
+    nowPos = pos + 4; // move past header-body separator
+
+    // now HTTP header is processed successfully, start to process first chunk
+    while (nowState != STATE_FINISH && nowState != STATE_ERROR) {
+        if (bytesInBuf - nowPos < 256 && bytesInBuf < STREAM_BUFFER_SIZE) {
+            if (nowPos > 0) {
+                memmove(streamBuffer, streamBuffer + nowPos, bytesInBuf - nowPos);
+                bytesInBuf -= nowPos;
+                nowPos = 0;
+            }
+            int byteReceived = recv(sock, streamBuffer + bytesInBuf, sizeof(streamBuffer) - bytesInBuf, 0);
+            if (byteReceived < 0) {
+                printf("Receive failed.\r\n");
+                nowState = STATE_ERROR;
+                break;
+            }
+            bytesInBuf += byteReceived;
+        }
+        switch (nowState) {
+            case STATE_PROCESS_FIRST_CHUNK:
+            case STATE_PARSE_CHUNK_HEADER:
+                uint32_t parsePos = nowPos;
+                nowChunkSize = 0;
+                while (parsePos < bytesInBuf && isxdigit(streamBuffer[parsePos])) {
+                    nowChunkSize = nowChunkSize * 16 + (streamBuffer[parsePos] > '9' ?
+                        (tolower(streamBuffer[parsePos]) - 'a' + 10) :
+                        streamBuffer[parsePos] - '0');
+                    parsePos++;
+                }
+                // check the end of header
+                if (parsePos + 1 >= bytesInBuf || streamBuffer[parsePos] != '\r' ||
+                    streamBuffer[parsePos + 1] != '\n') {
+                    // incomplete chunk size line
+                    break;
+                }
+                nowPos = parsePos + 2;
+                if (nowChunkSize == 0) {
+                    printf("Find the last chunk, body is end\r\n");
+                    nowState = STATE_FINISH;
+                }
+                printf("New chunk acquired! Size: %ld Bytes\r\n", nowChunkSize);
+                if (nowState == STATE_PROCESS_FIRST_CHUNK) {
+                    // need to process some data in the first chunk
+                    getNext("\"finish_reason\":\"stop\"", 22);
+                    pos = kmp((const char *) streamBuffer + nowPos, bytesInBuf - nowPos,
+                                  "\"finish_reason\":\"stop\"", 22);
+                    if (pos == -1) {
+                        printf("Error: \'finish_reason\' is not \'stop\' or not found.\r\n");
+                        nowState = STATE_ERROR;
+                        continue;
+                    }
+                    getNext("\"audio\":{\"data\":\"}", 17);
+                    pos = kmp((const char *) streamBuffer + nowPos, bytesInBuf - nowPos,
+                              "\"audio\":{\"data\":\"}", 17);
+                    if (pos == -1) {
+                        printf("Error: audio data header not found.\r\n");
+                        nowState = STATE_ERROR;
+                        continue;
+                    }
+
+                    nowPos += pos + 17;
+                    nowChunkSize -= pos + 17;
+                    printf("First chunk processed, audio data starts.\r\n");
+                }
+                nowState = STATE_STREAM_AUDIO_DATA;
+            case STATE_STREAM_AUDIO_DATA:
+                if (nowChunkSize <= 0) {
+                    // now Chunk data is all processed
+                    nowState = STATE_PARSE_CHUNK_HEADER;
+                    continue;
+                }
+
+                const uint32_t dataAvailableInBuf = bytesInBuf - nowPos;
+                uint32_t dataToProcess = (dataAvailableInBuf < nowChunkSize) ?
+                dataAvailableInBuf : nowChunkSize;
+
+                if (dataToProcess == 0) {
+                    // need more data, back to recv
+                    continue;
+                }
+
+                uint8_t *endQuote = (uint8_t *) memchr(streamBuffer + nowPos, '"', dataToProcess);
+                if (endQuote != NULL) {
+                    // these are the final part of audio data
+                    uint32_t bytesToCopy = endQuote - (streamBuffer + nowPos);
+                    printf("End of audio Data found in this chunk, bytes to copy: %ld\r\n", bytesToCopy);
+                    if (bytesToCopy > 0) {
+                        // todo: copy to pingpong buffer
+                        copy_to_pingpong_buffer(streamBuffer + nowPos, bytesToCopy);
+                    }
+                    nowState = STATE_FINISH;
+                } else {
+                    // todo: copy dataToProcess bytes to pingpong buffer
+                    // example: copy_to_pingpong_buffer(streamBuffer + nowPos, data_to_process);
+                    copy_to_pingpong_buffer(streamBuffer + nowPos, dataToProcess);
+                    nowPos += dataToProcess;
+                    nowChunkSize -= dataToProcess;
+
+                    if (nowChunkSize == 0) {
+                        if (bytesInBuf - nowPos >= 2 &&
+                            streamBuffer[nowPos] == '\r' &&
+                            streamBuffer[nowPos + 1] == '\n') {
+                            nowPos += 2; // move past chunk ending
+                            nowState = STATE_PARSE_CHUNK_HEADER;
+                        }
+                    }
+                }
+                break;
+            default:
+                nowState = STATE_ERROR;
+                break;
+        }
+    }
+    gNetworkFinished = true;
+    // to ensure file saving
+    if (fileProcessCtl.firstBufDataLen > 0) {
+        osSemaphoreRelease(fileProcessCtl.semBufHalfFullHandle);
+    }
+    if (fileProcessCtl.secondBufDataLen > 0) {
+        osSemaphoreRelease(fileProcessCtl.semBufFullHandle);
+    }
+
+    return (nowState == STATE_ERROR) ? 1 : 0;
 }
 
 int send_file_base64_over_socket(const int sock,
@@ -418,7 +587,7 @@ int send_file_base64_over_socket(const int sock,
             return -6;
         }
 
-        // if want to send newline after each chunk
+        // want to send newline after each chunk
         // const char nl = '\n';
         // send_all(sock, &nl, 1);
 
@@ -488,7 +657,7 @@ void doSendAudioToZhiPuServer()
                               "Content-Type: application/json\r\n"
                               "Authorization: Bearer 09ccf85f65514088a62da2af2744b0b2.TBqQ09VrKCxw0efd\r\n"
                               "Content-Length: %u\r\n"
-                              "Connection: keep-alive\r\n"
+                              "Connection: close\r\n"
                               "\r\n",
                               path, body_length);
 
@@ -513,19 +682,25 @@ void doSendAudioToZhiPuServer()
     // send body part2
     send_all(sock, json_body_part2, strlen(json_body_part2));
 
-    osSemaphoreDef(semDataAvailable);
-    fileProcessCtl.semDataAvailableHandle = osSemaphoreCreate(osSemaphore(semDataAvailable), 1);
-    osSemaphoreDef(semProcessOverHandle);
-    fileProcessCtl.semProcessOverHandle = osSemaphoreCreate(osSemaphore(semProcessOverHandle), 1);
+    osSemaphoreDef(semBufHalfFull);
+    fileProcessCtl.semBufHalfFullHandle = osSemaphoreCreate(osSemaphore(semBufHalfFull), 1);
+    osSemaphoreDef(semBufFull);
+    fileProcessCtl.semBufFullHandle = osSemaphoreCreate(osSemaphore(semBufFull), 1);
+    osSemaphoreDef(semBufHalfFini);
+    fileProcessCtl.semBufHalfFiniHandle = osSemaphoreCreate(osSemaphore(semBufHalfFini), 1);
+    osSemaphoreDef(semBufFullFini);
+    fileProcessCtl.semBufFullFiniHandle = osSemaphoreCreate(osSemaphore(semBufFullFini), 1);
     // clear the semaphores
-    osSemaphoreWait(fileProcessCtl.semDataAvailableHandle, 0);
-    osSemaphoreWait(fileProcessCtl.semProcessOverHandle, 0);
+    osSemaphoreWait(fileProcessCtl.semBufFullHandle, 0);
+    osSemaphoreWait(fileProcessCtl.semBufHalfFullHandle, 0);
 
     osThreadDef(fileWriter, fileWriterTask, osPriorityHigh, 0, 2048);
     fileWriterTaskHandle = osThreadCreate(osThread(fileWriter), NULL);
 
     const int result = processServerResponse(sock);
 
+    osSemaphoreWait(fileProcessCtl.semBufHalfFiniHandle, osWaitForever);
+    osSemaphoreWait(fileProcessCtl.semBufFullFiniHandle, osWaitForever);
     osThreadTerminate(fileWriterTaskHandle);
 
     if (result == 0) {
@@ -536,8 +711,10 @@ void doSendAudioToZhiPuServer()
     closesocket(sock);
 
     // delete the semaphores
-    osSemaphoreDelete(fileProcessCtl.semDataAvailableHandle);
-    osSemaphoreDelete(fileProcessCtl.semProcessOverHandle);
+    osSemaphoreDelete(fileProcessCtl.semBufHalfFullHandle);
+    osSemaphoreDelete(fileProcessCtl.semBufFullHandle);
+    osSemaphoreDelete(fileProcessCtl.semBufHalfFiniHandle);
+    osSemaphoreDelete(fileProcessCtl.semBufFullFiniHandle);
 
     osSemaphoreRelease(networkFiniSemHandle);
 }
@@ -545,9 +722,109 @@ void doSendAudioToZhiPuServer()
 static void fileWriterTask(void const *argument)
 {
     (void)argument;
-    for (;;) {
-        osDelay(1);
+
+    // CRITICAL FIX #1: Move all large data structures out of the stack.
+    // By declaring them 'static', they are placed in the .bss segment at compile time,
+    // preventing any possibility of stack overflow from these buffers.
+    static FIL receiveFile; // The file object itself must be static.
+    static UINT bW;
+    static uint8_t base64WorkBuffer[FILE_PROCESS_HALF_BUFFER_SIZE + 4];
+    static uint8_t decodedBuffer[FILE_PROCESS_HALF_BUFFER_SIZE + 4];
+
+    uint32_t bytesInWorkBuffer = 0;
+    FRESULT fr;
+
+    fr = f_open(&receiveFile, "receivedAudio.wav", FA_CREATE_ALWAYS | FA_WRITE);
+    if (fr != FR_OK) {
+        printf("FILE_TASK: CRITICAL FAILURE - f_open failed with code %d. Mission aborted.\r\n", fr);
+        gNetworkFinished = true; // Signal network thread to stop.
+        osThreadTerminate(NULL);
+        return; // Execution will not reach here.
     }
+
+    while (1) {
+        // The exit condition must be the absolute first check.
+        if (gNetworkFinished && bytesInWorkBuffer == 0) {
+            printf("FILE_TASK: Completion signal received and all buffers flushed.\r\n");
+            break;
+        }
+
+        // CRITICAL FIX #2: A fair and non-polling wait logic.
+        // We block indefinitely on the first buffer's signal. This is efficient.
+        // There is no point in timing out and spinning the CPU.
+        osStatus status = osSemaphoreWait(fileProcessCtl.semBufHalfFullHandle, osWaitForever);
+
+        // This check is a failsafe for RTOS errors; osOK is expected.
+        if (status == osOK) {
+            printf("start to process file\r\n");
+            uint8_t* source_buffer = fileProcessCtl.fileProcessBuf;
+            uint32_t source_len = fileProcessCtl.firstBufDataLen;
+
+            // Process the data from the first buffer
+            if (source_len > 0) {
+                // Append data to our robust working buffer
+                memcpy(base64WorkBuffer + bytesInWorkBuffer, source_buffer, source_len);
+                bytesInWorkBuffer += source_len;
+            }
+
+            // Immediately release the ping-pong buffer so the network thread can reuse it.
+            fileProcessCtl.firstBufDataLen = 0;
+            osSemaphoreRelease(fileProcessCtl.semBufHalfFiniHandle);
+
+        } else {
+             // If the first semaphore timed out or had an error, we check the second.
+             // This structure makes it fairly check both if needed, but primarily waits on the first.
+             status = osSemaphoreWait(fileProcessCtl.semBufFullHandle, 10); // Short wait on second
+             if (status == osOK) {
+                uint8_t* source_buffer = fileProcessCtl.fileProcessBuf + FILE_PROCESS_HALF_BUFFER_SIZE;
+                uint32_t source_len = fileProcessCtl.secondBufDataLen;
+
+                // Process the data from the second buffer
+                if (source_len > 0) {
+                    memcpy(base64WorkBuffer + bytesInWorkBuffer, source_buffer, source_len);
+                    bytesInWorkBuffer += source_len;
+                }
+
+                // Immediately release the second buffer
+                fileProcessCtl.secondBufDataLen = 0;
+                osSemaphoreRelease(fileProcessCtl.semBufFullFiniHandle);
+             }
+        }
+
+        // Now, process whatever is in the work buffer
+        if (bytesInWorkBuffer > 0) {
+            uint32_t len_to_decode = bytesInWorkBuffer - (bytesInWorkBuffer % 4);
+            if (len_to_decode > 0) {
+                int decoded_len = base64_decode((const char*)base64WorkBuffer, len_to_decode, decodedBuffer, sizeof(decodedBuffer));
+                if (decoded_len > 0) {
+                    fr = f_write(&receiveFile, decodedBuffer, decoded_len, &bW);
+                    if (fr != FR_OK) {
+                        printf("FILE_TASK: CRITICAL FAILURE - f_write failed with code %d.\r\n", fr);
+                        gNetworkFinished = true; // Signal immediate shutdown
+                        break; // Exit the loop
+                    }
+
+                    // Shift the remaining few bytes to the start of the buffer for the next round
+                    bytesInWorkBuffer -= len_to_decode;
+                    if (bytesInWorkBuffer > 0) {
+                        memmove(base64WorkBuffer, base64WorkBuffer + len_to_decode, bytesInWorkBuffer);
+                    }
+                } else if (decoded_len < 0) {
+                    printf("FILE_TASK: CRITICAL FAILURE - base64_decode error.\r\n");
+                    gNetworkFinished = true;
+                    break;
+                }
+            }
+        }
+        // If no semaphore was ready, yield the CPU to other tasks.
+        if(status != osOK) {
+            osThreadYield();
+        }
+    }
+
+    printf("FILE_TASK: Closing file. Mission accomplished.\r\n");
+    f_close(&receiveFile);
+    osThreadTerminate(NULL);
 }
 
 void StartMyNetworkTask(void const * argument)
