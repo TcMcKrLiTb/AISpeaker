@@ -101,6 +101,8 @@ osThreadId audioFillerTaskHandle;
 osSemaphoreId audioSemHandle;
 osSemaphoreId stopRecordSemHandle;
 osSemaphoreId saveFiniSemHandle;
+osSemaphoreId networkFiniSemHandle;
+osSemaphoreId testCountingSemHandle;
 /* USER CODE BEGIN PV */
 
 static FMC_SDRAM_CommandTypeDef Command;
@@ -157,9 +159,6 @@ int main(void)
 
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
-
-  /* Enable D-Cache---------------------------------------------------------*/
-  SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -223,6 +222,14 @@ int main(void)
   osSemaphoreDef(saveFiniSem);
   saveFiniSemHandle = osSemaphoreCreate(osSemaphore(saveFiniSem), 1);
 
+  /* definition and creation of networkFiniSem */
+  osSemaphoreDef(networkFiniSem);
+  networkFiniSemHandle = osSemaphoreCreate(osSemaphore(networkFiniSem), 1);
+
+  /* definition and creation of testCountingSem */
+  osSemaphoreDef(testCountingSem);
+  testCountingSemHandle = osSemaphoreCreate(osSemaphore(testCountingSem), 2);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -249,8 +256,6 @@ int main(void)
   audioFillerTaskHandle = osThreadCreate(osThread(audioFillerTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  // suspend audioFiller at First, start it when needed
-    osThreadSuspend(audioFillerTaskHandle);
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
@@ -735,7 +740,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 1152000;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -786,16 +791,16 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
   /* DMA2_Stream4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream4_IRQn);
   /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
   /* DMA2_Stream7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 
 }
@@ -1035,7 +1040,9 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
-    udp_init();
+    // suspend audioFiller at First, start it when needed
+    osThreadTerminate(audioFillerTaskHandle);
+//    udp_init();
   /* Infinite loop */
   for(;;)
   {
@@ -1089,6 +1096,17 @@ void MPU_Config(void)
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
   MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER3;
+  MPU_InitStruct.BaseAddress = 0xC0000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_8MB;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */

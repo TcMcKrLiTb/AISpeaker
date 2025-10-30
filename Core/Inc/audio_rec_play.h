@@ -4,18 +4,18 @@
 #ifndef __AUDIO_REC_PLAY_H__
 #define __AUDIO_REC_PLAY_H__
 
-#define AUDIO_BUFFER_SIZE       4096
+#define        4096//SRAM里的缓冲区大小，4K
 #define AUDIO_DEFAULT_VOLUME    70
 
-#define AUDIO_BLOCK_SIZE        (32768U)
+#define AUDIO_BLOCK_SIZE        (32768U)//32K,好像是录音时单次处理的数据块大小
 
 #define I2S_AUDIOFREQ_16K       (16000U)
 
-// make a 1MB buffer
-#define SDRAM_AUDIO_BLOCK_SIZE   ((uint32_t)(2 * 1024U * 1024U))
+// make a 1MB buffer——事2MB罢
+#define SDRAM_AUDIO_BLOCK_SIZE   ((uint32_t)(2 * 1024U * 1024U))//位于SDRAM的块大小2M，作为SRAM和SD卡的中继
 // read in 32k at start to cut down delay
 #define INITIAL_READ_BYTES       ((uint32_t)(200U * 1024U))
-
+AUDIO_BUFFER_SIZE
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,7 +45,7 @@ typedef enum {
 }BUFFER_StateTypeDef;
 
 typedef struct {
-    uint8_t buff[AUDIO_BLOCK_SIZE * 2];
+    uint8_t buff[AUDIO_BLOCK_SIZE * 2];//SRAM总大小是64K，录音时候要从SRAM>SDRAM>SD卡，块是32K；播放时从SD卡>SDRAM>SRAM，块是2K，屌
     uint32_t fptr;
     BUFFER_StateTypeDef state;
 }AUDIO_BufferTypeDef;

@@ -557,9 +557,116 @@
             "Width": 480,
             "Height": 272,
             "RelativeFilename": "__generated\\clay_theme_images_backgrounds_480x272_rays.png"
+          },
+          {
+            "Type": "Button",
+            "Name": "button1",
+            "X": 120,
+            "Y": 111,
+            "Width": 240,
+            "Height": 50,
+            "Pressed": "__generated\\alternate_theme_images_widgets_button_regular_height_50_medium_rounded_pressed.png",
+            "Released": "__generated\\alternate_theme_images_widgets_button_regular_height_50_medium_rounded_normal.png",
+            "Preset": "alternate_theme\\presets\\button\\regular\\height_50\\medium_rounded_normal.json"
           }
         ],
-        "Interactions": []
+        "Interactions": [
+          {
+            "InteractionName": "Interaction1",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "button1"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "function1"
+            }
+          }
+        ]
+      },
+      {
+        "Name": "AISpeakerPage",
+        "Components": [
+          {
+            "Type": "Image",
+            "Name": "image1",
+            "Width": 480,
+            "Height": 272,
+            "RelativeFilename": "__generated\\light_theme_images_backgrounds_480x272_shady_waves.png"
+          },
+          {
+            "Type": "ButtonWithIcon",
+            "Name": "startTalkButton",
+            "X": 359,
+            "Y": 89,
+            "Width": 60,
+            "Height": 60,
+            "Pressed": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_pressed.png",
+            "Released": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_normal.png",
+            "IconPressed": "__generated\\icon_theme_images_action_done_40_40_E8F6FB.svg.png",
+            "IconReleased": "__generated\\icon_theme_images_av_mic_40_40_E8F6FB.svg.png",
+            "IconX": 10,
+            "IconY": 10,
+            "IconHeight": 40,
+            "IconWidth": 40,
+            "Preset": "light_theme\\presets\\button\\icon\\rounded\\tiny_fill_normal.json"
+          },
+          {
+            "Type": "ButtonWithIcon",
+            "Name": "stopTalkButton",
+            "X": 359,
+            "Y": 89,
+            "Width": 60,
+            "Height": 60,
+            "Visible": false,
+            "Pressed": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_pressed.png",
+            "Released": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_normal.png",
+            "IconPressed": "__generated\\icon_theme_images_action_done_40_40_E8F6FB.svg.png",
+            "IconReleased": "__generated\\icon_theme_images_av_stop_circle_40_40_E8F6FB.svg.png",
+            "IconX": 10,
+            "IconY": 10,
+            "IconHeight": 40,
+            "IconWidth": 40,
+            "Preset": "light_theme\\presets\\button\\icon\\rounded\\tiny_fill_normal.json"
+          },
+          {
+            "Type": "AnimatedImage",
+            "Name": "animatedImage1",
+            "X": 357,
+            "Y": 179,
+            "Width": 64,
+            "Height": 64,
+            "FileNameFirst": "loading\\frame1.png",
+            "FileNameLast": "loading\\frame15.png",
+            "UpdateTicksInterval": 200,
+            "StartOnLoad": true,
+            "LoopEnabled": true
+          }
+        ],
+        "Interactions": [
+          {
+            "InteractionName": "startTalkInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "startTalkButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "startTalk"
+            }
+          },
+          {
+            "InteractionName": "stopTalkInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "stopTalkButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "stopTalk"
+            }
+          }
+        ]
       }
     ],
     "CustomContainerDefinitions": [
@@ -637,7 +744,7 @@
       "Height": 272
     },
     "SelectedColorDepth": 16,
-    "StartupScreenName": "audioRecorder",
+    "StartupScreenName": "AISpeakerPage",
     "SelectedStartupLanguage": "GB",
     "TouchGfxPath": "../Middlewares/ST/touchgfx",
     "UIPath": ".",

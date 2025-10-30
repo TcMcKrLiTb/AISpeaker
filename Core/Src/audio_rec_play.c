@@ -4,6 +4,7 @@
 
 #include "stm32746g_discovery_audio.h"
 #include "audio_rec_play.h"
+#include "cmsis_os.h"
 #include "wm8994.h"
 #include "fatfs.h"
 #include "main.h"
@@ -12,32 +13,37 @@
 extern "C" {
 #endif
 
-uint8_t external_buffer[SDRAM_AUDIO_BLOCK_SIZE] __attribute__((section("AudioBuffer"))) __attribute__((aligned(32)));
+uint8_t external_buffer[SDRAM_AUDIO_BLOCK_SIZE] __attribute__((section("AudioBuffer"))) __attribute__((aligned(32)));//位于SDRAM的块大小2M，作为SRAM和SD卡的中继
 
-extern SDRAM_HandleTypeDef hsdram1;
+extern SDRAM_HandleTypeDef hsdram1;//SDRAM句柄变量 内含SDRAM的信息
 
-__IO uint8_t sdFileOpened = 0;
-__IO uint32_t sdFileReadOffset = 0; // offset of already read in to SDRAM
-AUDIO_PLAYBACK_StateTypeDef audio_state;
-uint32_t AudioFileSize;
-uint32_t AudioStartAddress;
-uint16_t SavedFileNum = 1;
-__IO uint32_t uwVolume = 20;
-__IO uint32_t uwPauseEnabledStatus = 0;
-__IO uint8_t audio_out_error_flag;
-__IO uint8_t audio_in_error_flag;
-__IO uint8_t audio_pause_flag;
-__IO uint8_t audio_save_flag;
-ALIGN_32BYTES (AUDIO_BufferTypeDef  buffer_ctl);
+__IO uint8_t sdFileOpened = 0;//好像是标记SD卡文件有没有被打开的标志
+__IO uint32_t sdFileReadOffset = 0; // offset of already read in to SDRAM骚瑞看洋文不得劲，记录SD卡文件已经读取了多少，即存入SDRAM里累计有多少了
+AUDIO_PLAYBACK_StateTypeDef audio_state;//结构体记录音频的当前状态，好像是标记当前音频是初始化状态or播放状态or录音状态
+uint32_t AudioFileSize;//应该是SD卡里音频文件整个的大小
+uint32_t AudioStartAddress;//音频文件在SDRAM里的起始存储地址
+uint16_t SavedFileNum = 1;//保存过的文件数，用来文件命名
+__IO uint32_t uwVolume = 20;//音量大小
+__IO uint32_t uwPauseEnabledStatus = 0;//功能：标记音频操作是否处于暂停使能状态，0 表示未暂停（正常播放 / 录制），1 表示已暂停（此时需停止数据传输，保留当前状态，等待继续指令）。
+__IO uint8_t audio_out_error_flag;//音频输出错误标志
+__IO uint8_t audio_in_error_flag;//音频输入错误标志
+__IO uint8_t audio_pause_flag;//录制暂停
+__IO uint8_t audio_save_flag;//录音保存
+__IO uint8_t immediate_save;//立即保存
+ALIGN_32BYTES (AUDIO_BufferTypeDef  buffer_ctl);//让buffer_ctl在SRAM中的起始地址是 32 字节的整数倍适应DMA要求，成员state表示当前播到了什么状态，刚开始or一半or播完；fptr指针记录已经处理的音频数据长度；
 
-extern osSemaphoreId audioSemHandle;
-extern osSemaphoreId stopRecordSemHandle;
-extern osSemaphoreId saveFiniSemHandle;
+extern osSemaphoreId audioSemHandle;//信号量句柄
+extern osSemaphoreId stopRecordSemHandle;//信号量句柄
+extern osSemaphoreId saveFiniSemHandle;//信号量句柄
+extern osThreadId audioFillerTaskHandle;//线程句柄
+extern uint32_t nowFileSize;
 
-extern DMA_HandleTypeDef hdma_sai2_b;
+extern DMA_HandleTypeDef hdma_sai2_b;//DMA结构体
 
 // temperate buffer to storage some info
-uint8_t sector[512];
+uint8_t sector[512];//
+
+void audioFiller_Task(const void *argument);
 
 static inline uint32_t ALIGN_DOWN_32(uint32_t x) { return x & ~31u; }
 static inline uint32_t ALIGN_UP_32(uint32_t x)   { return (x + 31u) & ~31u; }
@@ -231,7 +237,9 @@ static uint32_t SaveDataToSDCard()
         f_close(&SDFile);
         sdFileOpened = 0;
     }
-    if (f_mount(&SDFatFS, (TCHAR const*)"", 1)) {
+    retSD = f_mount(&SDFatFS, (TCHAR const*)"", 1);
+    if (retSD != FR_OK) {
+        printf("Failed to mount! ret:%d\r\n", retSD);
         return 1; // mount failed
     }
     do {
@@ -244,8 +252,9 @@ static uint32_t SaveDataToSDCard()
     } while (fno.fname[0] != 0 && ++SavedFileNum < 1000);
     snprintf((char *)sector, 100, "/Audio/%s", patternStr);
     retSD = f_open(&SDFile, (char *)sector, FA_CREATE_ALWAYS | FA_WRITE);
+    sdFileOpened = 1;
     if (retSD != FR_OK) {
-        printf("Failed to open file for recording save!\r\n");
+        printf("Failed to open file for recording save! ret:%d\r\nfile name is:%s\r\n", retSD, sector);
         return 1;
     }
     // write WAV header
@@ -253,6 +262,7 @@ static uint32_t SaveDataToSDCard()
     // RIFF header
     memcpy(wavHeader, "RIFF", 4);
     uint32_t fileSize = buffer_ctl.fptr + 36;
+    nowFileSize = fileSize + 8;
     wavHeader[4] = (uint8_t)(fileSize & 0xFF);
     wavHeader[5] = (uint8_t)((fileSize >> 8) & 0xFF);
     wavHeader[6] = (uint8_t)((fileSize >> 16) & 0xFF);
@@ -284,7 +294,7 @@ static uint32_t SaveDataToSDCard()
     wavHeader[43] = (uint8_t)((buffer_ctl.fptr >> 24) & 0xFF);
     retSD = f_write(&SDFile, wavHeader, 44, &bw);
     if (retSD != FR_OK || bw < 44) {
-        printf("Failed to write WAV header!\r\n");
+        printf("Failed to write WAV header!ret:%d\r\nfile name is:%s\r\n", retSD, sector);
         f_close(&SDFile);
         sdFileOpened = 0;
         return 2;
@@ -292,17 +302,18 @@ static uint32_t SaveDataToSDCard()
     // write audio data
     retSD = f_write(&SDFile, (uint32_t *)AudioStartAddress, buffer_ctl.fptr, &bw);
     if (retSD != FR_OK || bw < buffer_ctl.fptr) {
-        printf("Failed to write audio data!\r\n");
+        printf("Failed to write audio data!ret:%d\r\nfile name is:%s\r\n", retSD, sector);
         f_close(&SDFile);
         sdFileOpened = 0;
         return 3;
     }
     retSD = f_close(&SDFile);
     if (retSD != FR_OK) {
-        printf("Failed to close file after recording save!\r\n");
+        printf("Failed to close file after recording save!ret:%d\r\n", retSD);
         sdFileOpened = 0;
         return 4;
     }
+    sdFileOpened = 0;
     return 0;
 }
 
@@ -404,6 +415,11 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
 
 uint8_t StartRecord()
 {
+    immediate_save = 0;
+
+    osThreadDef(audioFillerTask, audioFiller_Task, osPriorityHigh, 0, 2048);
+    audioFillerTaskHandle = osThreadCreate(osThread(audioFillerTask), NULL);
+
     if (BSP_AUDIO_IN_InitEx(INPUT_DEVICE_DIGITAL_MICROPHONE_2,
                             I2S_AUDIOFREQ_16K,
                             DEFAULT_AUDIO_IN_BIT_RESOLUTION,
@@ -418,11 +434,10 @@ uint8_t StartRecord()
     buffer_ctl.state = BUFFER_OFFSET_NONE;
     buffer_ctl.fptr = 0;
     audio_state = AUDIO_STATE_RECORDING;
-    BSP_AUDIO_IN_Record((uint16_t*)&buffer_ctl.buff[0], AUDIO_BLOCK_SIZE);
-    return 0;
+    return BSP_AUDIO_IN_Record((uint16_t*)&buffer_ctl.buff[0], AUDIO_BLOCK_SIZE);
 }
 
-void audioFiller_Task(void *argument)
+void audioFiller_Task(const void *argument)
 {
     uint32_t bytesRead;
     (void)argument;
@@ -438,12 +453,11 @@ void audioFiller_Task(void *argument)
 
         if (audio_in_error_flag) {
             audio_in_error_flag = 0;
-            printf("Audio ERROR callback occurred, stopping playback\r\n");
+            printf("Audio ERROR callback occurred, stopping record\r\n");
             BSP_AUDIO_IN_Stop(CODEC_PDWN_SW);
         }
 
         if (audio_save_flag) {
-            audio_save_flag = 0;
             printf("Saving recorded data to SD card...\r\n");
             if (SaveDataToSDCard() == 0) {
                 printf("Recording saved successfully!\r\n");
@@ -451,6 +465,7 @@ void audioFiller_Task(void *argument)
                 printf("Failed to save recording!\r\n");
             }
             osSemaphoreRelease(saveFiniSemHandle);
+            osThreadTerminate(audioFillerTaskHandle);
         }
 
         switch (audio_state) {
@@ -465,11 +480,12 @@ void audioFiller_Task(void *argument)
                 }
 
                 /* 1st half buffer played; so fill it and continue playing from bottom*/
+                // 播放时，当SRAM缓冲区播完一半（BUFFER_OFFSET_HALF）
                 if (buffer_ctl.state == BUFFER_OFFSET_HALF) {
                     bytesRead = GetData((void *) AudioStartAddress,
                                         buffer_ctl.fptr,
                                         &buffer_ctl.buff[0],
-                                        AUDIO_BUFFER_SIZE / 2);
+                                        AUDIO_BUFFER_SIZE / 2);//再从SDRAM里拿2K
                     if (bytesRead > 0) {
                         buffer_ctl.state = BUFFER_OFFSET_NONE;
                         buffer_ctl.fptr += bytesRead;
@@ -497,13 +513,14 @@ void audioFiller_Task(void *argument)
                 break;
             case AUDIO_STATE_RECORDING:
                 /* 1st half buffer recorded; so write these data into SDRAM*/
+                // 录音时，当SRAM缓冲区填满一半
                 if (buffer_ctl.state == BUFFER_OFFSET_HALF) {
                     buffer_ctl.state = BUFFER_OFFSET_NONE;
                     memcpy((uint32_t *)(AudioStartAddress + buffer_ctl.fptr),
                            &buffer_ctl.buff[0],
-                           AUDIO_BLOCK_SIZE);
+                           AUDIO_BLOCK_SIZE); // 将 SRAM 中 buffer_ctl.buff[0] 开始的 AUDIO_BLOCK_SIZE 数据复制到 SDRAM
 
-                    buffer_ctl.fptr += AUDIO_BLOCK_SIZE;
+                    buffer_ctl.fptr += AUDIO_BLOCK_SIZE;//移动一个块的大小
                     printf("buffer Half, Recorded %lu bytes\r\n", buffer_ctl.fptr);
                 }
 
@@ -590,6 +607,10 @@ void audioFiller_Task(void *argument)
             }
             audio_state = AUDIO_STATE_IDLE;
             printf("Recording stopped by user!!\r\n");
+            if (immediate_save == 1) {
+                audio_save_flag = 1;
+                immediate_save = 0;
+            }
         }
     }
 }

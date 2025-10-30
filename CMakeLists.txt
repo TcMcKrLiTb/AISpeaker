@@ -42,7 +42,8 @@ add_executable(${CMAKE_PROJECT_NAME}
         Core/Src/stm32746g_discovery_audio.c
         Drivers/BSP/Components/wm8994/wm8994.c
         Drivers/BSP/Components/ft5336/ft5336.c
-        TouchGFX/target/CortexMMCUInstrumentation.cpp)
+        TouchGFX/target/CortexMMCUInstrumentation.cpp
+        Core/Src/network.c)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)

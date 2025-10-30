@@ -9,6 +9,7 @@
 #include <gui/ethernettester_screen/EthernetTesterPresenter.hpp>
 #include <touchgfx/widgets/Box.hpp>
 #include <touchgfx/widgets/Image.hpp>
+#include <touchgfx/widgets/Button.hpp>
 
 class EthernetTesterViewBase : public touchgfx::View<EthernetTesterPresenter>
 {
@@ -16,6 +17,14 @@ public:
     EthernetTesterViewBase();
     virtual ~EthernetTesterViewBase();
     virtual void setupScreen();
+
+    /*
+     * Virtual Action Handlers
+     */
+    virtual void function1()
+    {
+        // Override and implement this function in EthernetTester
+    }
 
 protected:
     FrontendApplication& application() {
@@ -27,8 +36,19 @@ protected:
      */
     touchgfx::Box __background;
     touchgfx::Image image1;
+    touchgfx::Button button1;
 
 private:
+
+    /*
+     * Callback Declarations
+     */
+    touchgfx::Callback<EthernetTesterViewBase, const touchgfx::AbstractButton&> buttonCallback;
+
+    /*
+     * Callback Handler Declarations
+     */
+    void buttonCallbackHandler(const touchgfx::AbstractButton& src);
 
 };
 

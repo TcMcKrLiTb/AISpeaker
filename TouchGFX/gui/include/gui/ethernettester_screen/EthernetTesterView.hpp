@@ -11,6 +11,9 @@ public:
     virtual ~EthernetTesterView() {}
     virtual void setupScreen();
     virtual void tearDownScreen();
+
+    void function1() override;
+
 protected:
 };
 

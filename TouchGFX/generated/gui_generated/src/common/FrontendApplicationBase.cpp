@@ -17,6 +17,8 @@
 #include <gui/fatfstester_screen/fatFSTesterPresenter.hpp>
 #include <gui/ethernettester_screen/EthernetTesterView.hpp>
 #include <gui/ethernettester_screen/EthernetTesterPresenter.hpp>
+#include <gui/aispeakerpage_screen/AISpeakerPageView.hpp>
+#include <gui/aispeakerpage_screen/AISpeakerPagePresenter.hpp>
 
 using namespace touchgfx;
 
@@ -35,15 +37,15 @@ FrontendApplicationBase::FrontendApplicationBase(Model& m, FrontendHeap& heap)
  * Screen Transition Declarations
  */
 
-// audioRecorder
+// AISpeakerPage
 
-void FrontendApplicationBase::gotoaudioRecorderScreenNoTransition()
+void FrontendApplicationBase::gotoAISpeakerPageScreenNoTransition()
 {
-    transitionCallback = touchgfx::Callback<FrontendApplicationBase>(this, &FrontendApplicationBase::gotoaudioRecorderScreenNoTransitionImpl);
+    transitionCallback = touchgfx::Callback<FrontendApplicationBase>(this, &FrontendApplicationBase::gotoAISpeakerPageScreenNoTransitionImpl);
     pendingScreenTransitionCallback = &transitionCallback;
 }
 
-void FrontendApplicationBase::gotoaudioRecorderScreenNoTransitionImpl()
+void FrontendApplicationBase::gotoAISpeakerPageScreenNoTransitionImpl()
 {
-    touchgfx::makeTransition<audioRecorderView, audioRecorderPresenter, touchgfx::NoTransition, Model >(&currentScreen, &currentPresenter, frontendHeap, &currentTransition, &model);
+    touchgfx::makeTransition<AISpeakerPageView, AISpeakerPagePresenter, touchgfx::NoTransition, Model >(&currentScreen, &currentPresenter, frontendHeap, &currentTransition, &model);
 }

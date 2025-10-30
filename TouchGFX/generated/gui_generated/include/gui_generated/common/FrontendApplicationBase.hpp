@@ -17,19 +17,19 @@ public:
 
     virtual void changeToStartScreen()
     {
-        gotoaudioRecorderScreenNoTransition();
+        gotoAISpeakerPageScreenNoTransition();
     }
 
-    // audioRecorder
-    void gotoaudioRecorderScreenNoTransition();
+    // AISpeakerPage
+    void gotoAISpeakerPageScreenNoTransition();
 
 protected:
     touchgfx::Callback<FrontendApplicationBase> transitionCallback;
     FrontendHeap& frontendHeap;
     Model& model;
 
-    // audioRecorder
-    void gotoaudioRecorderScreenNoTransitionImpl();
+    // AISpeakerPage
+    void gotoAISpeakerPageScreenNoTransitionImpl();
 };
 
 #endif // FRONTENDAPPLICATIONBASE_HPP

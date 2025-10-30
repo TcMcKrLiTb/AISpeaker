@@ -20,6 +20,8 @@
 #include <gui/fatfstester_screen/fatFSTesterPresenter.hpp>
 #include <gui/ethernettester_screen/EthernetTesterView.hpp>
 #include <gui/ethernettester_screen/EthernetTesterPresenter.hpp>
+#include <gui/aispeakerpage_screen/AISpeakerPageView.hpp>
+#include <gui/aispeakerpage_screen/AISpeakerPagePresenter.hpp>
 
 
 /**
@@ -46,7 +48,8 @@ public:
             touchgfx::meta::TypeList< audioPlayerView,
             touchgfx::meta::TypeList< fatFSTesterView,
             touchgfx::meta::TypeList< EthernetTesterView,
-            touchgfx::meta::Nil > > >
+            touchgfx::meta::TypeList< AISpeakerPageView,
+            touchgfx::meta::Nil > > > >
             > GeneratedViewTypes;
 
     /**
@@ -62,7 +65,8 @@ public:
             touchgfx::meta::TypeList< audioPlayerPresenter,
             touchgfx::meta::TypeList< fatFSTesterPresenter,
             touchgfx::meta::TypeList< EthernetTesterPresenter,
-            touchgfx::meta::Nil > > >
+            touchgfx::meta::TypeList< AISpeakerPagePresenter,
+            touchgfx::meta::Nil > > > >
             > GeneratedPresenterTypes;
 
     /**
@@ -85,7 +89,7 @@ public:
 
     virtual void gotoStartScreen(FrontendApplication& app)
     {
-        app.gotoaudioRecorderScreenNoTransition();
+        app.gotoAISpeakerPageScreenNoTransition();
     }
 protected:
     FrontendHeapBase(touchgfx::AbstractPartition& presenters, touchgfx::AbstractPartition& views, touchgfx::AbstractPartition& transitions, FrontendApplication& app)

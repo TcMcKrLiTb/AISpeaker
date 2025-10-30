@@ -14,6 +14,9 @@ public:
     {
         model = m;
     }
+
+    virtual void saveCompleted() {};
+    virtual void networkTaskCompleted() {};
 protected:
     Model* model;
 };
