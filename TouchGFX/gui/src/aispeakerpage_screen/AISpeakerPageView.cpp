@@ -93,8 +93,7 @@ void AISpeakerPageView::saveCompleted()
 void AISpeakerPageView::networkCompleted()
 {
 #ifndef SIMULATOR
-
-    printf("network task completed!\r\n");
+    printf("network task completed!, now start to play the audio\r\n");
 
 #endif
     animatedImage1.stopAnimation();

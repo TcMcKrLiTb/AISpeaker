@@ -334,13 +334,17 @@ wavInfo wavInfoNow;
 /**
  * start to play wav File first time to read start DMA
  * @param path
+ * @param initVolume
  * @return
  */
-uint8_t StartPlayback(const char* path, uint16_t initVolume)
+uint8_t StartPlayback(const char* path, const uint16_t initVolume)
 {
     FRESULT res;
     uint32_t bytesRead;
     FIL startFile;
+
+    osThreadDef(audioFillerTask, audioFiller_Task, osPriorityHigh, 0, 2048);
+    audioFillerTaskHandle = osThreadCreate(osThread(audioFillerTask), NULL);
 
     if (sdFileOpened) {
         sdFileOpened = 0;
@@ -358,7 +362,7 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
     sdFileOpened = 1;
 
     // only support 16-bit stereo PCM
-    if (wavInfoNow.bitsPerSample != 16 || wavInfoNow.numChannels != 2) {
+    if (wavInfoNow.bitsPerSample != 16) {// || wavInfoNow.numChannels != 2) {
         f_close(&startFile);
         sdFileOpened = 0;
         return 3; // unsupported format
@@ -384,7 +388,7 @@ uint8_t StartPlayback(const char* path, uint16_t initVolume)
 
     uwPauseEnabledStatus = 0; /* 0 when audio is running, 1 when Pause is on */
     audio_pause_flag = 0;
-    uwVolume = AUDIO_DEFAULT_VOLUME;
+    uwVolume = initVolume;
 
     // use actual bytes read
     sdFileReadOffset += toRead;
@@ -460,12 +464,14 @@ void audioFiller_Task(const void *argument)
             printf("Audio ERROR callback occurred, stopping playback\r\n");
             BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
             sdFileOpened = 0;
+            osThreadTerminate(audioFillerTaskHandle);
         }
 
         if (audio_in_error_flag) {
             audio_in_error_flag = 0;
             printf("Audio ERROR callback occurred, stopping record\r\n");
             BSP_AUDIO_IN_Stop(CODEC_PDWN_SW);
+            osThreadTerminate(audioFillerTaskHandle);
         }
 
         if (audio_save_flag) {
@@ -487,6 +493,7 @@ void audioFiller_Task(const void *argument)
                     printf("play stopped!\r\n");
                     audio_state = AUDIO_STATE_IDLE;
                     BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
+                    osThreadTerminate(audioFillerTaskHandle);
                     break;
                 }
 
