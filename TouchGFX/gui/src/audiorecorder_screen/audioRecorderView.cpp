@@ -111,8 +111,8 @@ void audioRecorderView::saveCompleted()
     if (audio_save_flag == 0)
         return;
     audio_save_flag = 0;
-#endif
     Unicode::snprintf(textArea3Buffer, TEXTAREA3_SIZE, "RECORDED%d.WAV", SavedFileNum);
+#endif
     textArea3.setWildcard(textArea3Buffer);
     textArea3.setVisible(true);
     textArea3.invalidate();

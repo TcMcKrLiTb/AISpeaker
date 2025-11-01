@@ -235,6 +235,10 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
+  osSemaphoreWait(saveFiniSemHandle, 0);
+  osSemaphoreWait(networkFiniSemHandle, 0);
+  osSemaphoreWait(audioSemHandle, 0);
+  osSemaphoreWait(stopRecordSemHandle, 0);
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */

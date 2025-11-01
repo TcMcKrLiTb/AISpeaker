@@ -606,7 +606,7 @@ int8_t processResponse(const int sock)
                 allWrote += bW;
                 f_write(&testFile, streamDecodeBuffer + 500, 250, &bW);
                 allWrote += bW;
-                printf("decoded %d bytes data, wrote %d bytes data!\r\n", decodeBufferPos, allWrote);
+                // printf("decoded %d bytes data, wrote %d bytes data!\r\n", decodeBufferPos, allWrote);
                 decodeBufferPos = 0;
             }
         }
@@ -621,7 +621,7 @@ int8_t processResponse(const int sock)
                 f_write(&testFile, streamDecodeBuffer + allWrote, decodeBufferPos - allWrote, &bW);
                 allWrote += bW;
             }
-            printf("decoded %d bytes data, wrote %d bytes data!\r\n", decodeBufferPos, allWrote);
+            // printf("decoded %d bytes data, wrote %d bytes data!\r\n", decodeBufferPos, allWrote);
             break;
         }
         receivedFromSocket = recv(sock, streamBuffer, STREAM_BUFFER_SIZE - STREAM_BUFFER_MARGIN, 0);
@@ -705,10 +705,10 @@ void doSendAudioToZhiPuServer()
     const char *path = "/api/paas/v4/chat/completions";
     const char *json_body_part1 = "{\"model\":\"glm-4-voice\",\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"input_audio\",\"input_audio\":{\"data\":\"";
     const char *json_body_part2 = "\",\"format\":\"wav\"}}]}]}";
-    size_t body_length = strlen(json_body_part1) + strlen(json_body_part2) + 4 * (int) ceil((double) nowFileSize / 3);
+    const size_t body_length = strlen(json_body_part1) + strlen(json_body_part2) + 4 * (int) ceil((double) nowFileSize / 3);
 
     char request_buffer[512];
-    int header_len = snprintf(request_buffer, sizeof(request_buffer),
+    const int header_len = snprintf(request_buffer, sizeof(request_buffer),
                               "POST %s HTTP/1.1\r\n"
                               "Host: open.bigmodel.cn\r\n"
                               "User-Agent: STM32F746-AISpeaker(Created by ZSX,LSP)\r\n"

@@ -27,6 +27,7 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/audiorecorder_screen/audioRecorderView.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/common/FrontendApplication.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/containers/WavFileElement.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/containers/dialogElement.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/ethernettester_screen/EthernetTesterPresenter.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/ethernettester_screen/EthernetTesterView.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/fatfstester_screen/fatFSTesterPresenter.cpp
@@ -56,11 +57,19 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYBlackMythU_30_4bpp_18.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYBlackMythU_30_4bpp_19.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_0.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_10.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_11.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_12.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_13.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_14.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_15.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_16.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_17.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_18.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_19.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_31.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_4.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_6.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_9.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_verdana_10_4bpp_0.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_verdana_20_4bpp_0.cpp
@@ -85,12 +94,15 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/audiorecorder_screen/audioRecorderViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/common/FrontendApplicationBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/containers/WavFileElementBase.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/containers/dialogElementBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/ethernettester_screen/EthernetTesterViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/fatfstester_screen/fatFSTesterViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/BitmapDatabase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/SVGDatabase.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_containers_large_narrow_outlined_light.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_36_medium_rounded_normal.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_36_medium_rounded_pressed.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_36_tiny_rounded_inactive.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_50_medium_rounded_normal.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_50_medium_rounded_pressed.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_backgrounds_480x272_burly.cpp

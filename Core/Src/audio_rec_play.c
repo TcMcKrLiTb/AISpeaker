@@ -22,6 +22,7 @@ __IO uint32_t sdFileReadOffset = 0; // offset of already read in to SDRAM
 AUDIO_PLAYBACK_StateTypeDef audio_state;
 uint32_t AudioFileSize;
 uint32_t AudioStartAddress;
+uint32_t AudioFilePlayed;
 uint16_t SavedFileNum = 1;
 __IO uint32_t uwVolume = 20;
 __IO uint32_t uwPauseEnabledStatus = 0;
@@ -31,6 +32,8 @@ __IO uint8_t audio_pause_flag;
 __IO uint8_t audio_save_flag;
 __IO uint8_t immediate_save;
 ALIGN_32BYTES (AUDIO_BufferTypeDef  buffer_ctl);
+char playingFileName[40];
+wavInfo wavInfoNow;
 
 extern osSemaphoreId audioSemHandle;
 extern osSemaphoreId stopRecordSemHandle;
@@ -41,18 +44,9 @@ extern uint32_t nowFileSize;
 extern DMA_HandleTypeDef hdma_sai2_b;
 
 // temperate buffer to storage some info
-uint8_t sector[512];
+ALIGN_32BYTES (uint8_t sector[FILE_READ_ONCE_BYTES]);
 
 void audioFiller_Task(const void *argument);
-
-static inline uint32_t ALIGN_DOWN_32(uint32_t x) { return x & ~31u; }
-static inline uint32_t ALIGN_UP_32(uint32_t x)   { return (x + 31u) & ~31u; }
-
-static inline void INVALIDATE_DCACHE(void* addr, uint32_t len) {
-    uint32_t a = ALIGN_DOWN_32((uint32_t)addr);
-    uint32_t l = ALIGN_UP_32(len + ((uint32_t)addr - a));
-    SCB_InvalidateDCache_by_Addr((uint32_t*)a, l);
-}
 
 uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
 {
@@ -81,13 +75,12 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
     if (memcmp(sector + 8, "WAVE", 4) != 0)
         return 6; // not a WAVE file
 
-    uint32_t fileSize;
     // read in RIFF size
-    fileSize = *(uint8_t *) (sector + 4);
+    uint32_t fileSize = *(uint8_t *) (sector + 4);
     fileSize |= (*(uint8_t *) (sector + 5)) << 8;
     fileSize |= (*(uint8_t *) (sector + 6)) << 16;
     fileSize |= (*(uint8_t *) (sector + 7)) << 24;
-    info->fileSize = fileSize;
+    info->fileSize = fileSize + 8;
 
     uint8_t foundFmt = 0;
     uint8_t foundData = 0;
@@ -107,7 +100,6 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
         }
 
         if (strncmp("fmt ", (char*)sector, 4) == 0 && foundFmt == 0) {
-            uint16_t audioFormat;
             // fmt chunk must be at least 16 bytes for PCM-like V1
             chunkSize = *(uint8_t *) (sector + 4);
             chunkSize |= (*(uint8_t *) (sector + 5)) << 8;
@@ -131,7 +123,7 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
                 f_close(&headerFile);
                 return 4;
             }
-            audioFormat = *(uint8_t *)sector;
+            uint16_t audioFormat = *(uint8_t *) sector;
             audioFormat |= *(uint8_t*)(sector + 1) << 8;
             if (audioFormat != 1) {
                 // only support PCM encoding
@@ -147,7 +139,7 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
             info->bitsPerSample = *(uint8_t *)(sector + 14);
             info->bitsPerSample |= *(uint8_t *)(sector + 15);
             // read any extra fmt bytes (for extensible or other)
-            uint32_t fmtRead = 16;
+            const uint32_t fmtRead = 16;
             if (chunkSize > fmtRead) {
                 // todo: process extra fmt bytes
             }
@@ -178,63 +170,32 @@ uint32_t Audio_WavHeader(const char* WavName, wavInfo *info)
         }
     }
 
+    const FSIZE_t fileRealSize = f_size(&headerFile);
+
+    // if file real size smaller than header described, fix it.
+    if (fileRealSize < (info->fileSize)) {
+        info->dataChunkSize = fileRealSize - info->fileSize;
+        info->fileSize = fileRealSize;
+    }
+
     retSD = f_close(&headerFile);
     if (retSD != FR_OK)
         return 8; // close failed
     sdFileOpened = 0;
     if (foundData == 1 && foundFmt == 1) {
         return 0;
-    } else { // file is not complete
-        return 9;
     }
+    // file is not complete
+    return 9;
 }
 
-FRESULT SD_ReadToSDRAM_block(uint32_t file_offset, uint32_t sdram_write_pos, uint32_t bytes_to_read)
+static uint32_t GetData(void *pdata, const uint32_t offset, uint8_t *pBuf, const uint32_t NbrOfData)
 {
-    FIL readInFile;
-    FRESULT res;
-    UINT br;
-    uint32_t start = sdram_write_pos;
-    if (bytes_to_read == 0) return FR_OK;
+    const uint8_t *lPtr = pdata;
 
-    if ((start + bytes_to_read) > SDRAM_AUDIO_BLOCK_SIZE) {
-        uint32_t first = SDRAM_AUDIO_BLOCK_SIZE - start;
-        res = f_lseek(&readInFile, file_offset);
-        if (res != FR_OK) return res;
-        res = f_read(&readInFile, &external_buffer[start], first, &br); if (res != FR_OK) return res;
-        if (br != first) return FR_INT_ERR;
-
-        INVALIDATE_DCACHE(&external_buffer[start], first);
-
-        uint32_t second = bytes_to_read - first;
-        res = f_read(&readInFile, &external_buffer[0], second, &br); if (res != FR_OK) return res;
-        if (br != second) return FR_INT_ERR;
-
-        INVALIDATE_DCACHE(&external_buffer[0], second);
-
-        sdram_write_pos = second;
-    } else {
-        res = f_lseek(&readInFile, file_offset);
-        if (res != FR_OK) return res;
-        res = f_read(&readInFile, &external_buffer[start], bytes_to_read, &br); if (res != FR_OK) return res;
-        if (br != bytes_to_read) return FR_INT_ERR;
-
-        INVALIDATE_DCACHE(&external_buffer[start], bytes_to_read);
-
-        sdram_write_pos = (start + bytes_to_read) % SDRAM_AUDIO_BLOCK_SIZE;
-    }
-
-    return FR_OK;
-}
-
-static uint32_t GetData(void *pdata, uint32_t offset, uint8_t *pbuf, uint32_t NbrOfData)
-{
-    uint8_t *lptr = pdata;
-    uint32_t ReadDataNbr;
-
-    ReadDataNbr = 0;
-    while(((offset + ReadDataNbr) < AudioFileSize) && (ReadDataNbr < NbrOfData)) {
-        pbuf[ReadDataNbr]= lptr [offset + ReadDataNbr];
+    uint32_t ReadDataNbr = 0;
+    while(((offset + ReadDataNbr) < AudioFileSize * 2 / wavInfoNow.numChannels) && (ReadDataNbr < NbrOfData)) {
+        pBuf[ReadDataNbr]= lPtr [offset + ReadDataNbr];
         ReadDataNbr++;
     }
     return ReadDataNbr;
@@ -289,12 +250,12 @@ static uint32_t SaveDataToSDCard()
     wavHeader[25] = (uint8_t)((I2S_AUDIOFREQ_16K >> 8) & 0xFF);
     wavHeader[26] = (uint8_t)((I2S_AUDIOFREQ_16K >> 16) & 0xFF);
     wavHeader[27] = (uint8_t)((I2S_AUDIOFREQ_16K >> 24) & 0xFF);
-    uint32_t byteRate = I2S_AUDIOFREQ_16K * DEFAULT_AUDIO_IN_CHANNEL_NBR * (DEFAULT_AUDIO_IN_BIT_RESOLUTION / 8);
+    const uint32_t byteRate = I2S_AUDIOFREQ_16K * DEFAULT_AUDIO_IN_CHANNEL_NBR * (DEFAULT_AUDIO_IN_BIT_RESOLUTION / 8);
     wavHeader[28] = (uint8_t)(byteRate & 0xFF);
     wavHeader[29] = (uint8_t)((byteRate >> 8) & 0xFF);
     wavHeader[30] = (uint8_t)((byteRate >> 16) & 0xFF);
     wavHeader[31] = (uint8_t)((byteRate >> 24) & 0xFF);
-    uint16_t blockAlign = DEFAULT_AUDIO_IN_CHANNEL_NBR * (DEFAULT_AUDIO_IN_BIT_RESOLUTION / 8);
+    const uint16_t blockAlign = DEFAULT_AUDIO_IN_CHANNEL_NBR * (DEFAULT_AUDIO_IN_BIT_RESOLUTION / 8);
     wavHeader[32] = (uint8_t)(blockAlign & 0xFF);
     wavHeader[33] = (uint8_t)((blockAlign >> 8) & 0xFF);
     wavHeader[34] = DEFAULT_AUDIO_IN_BIT_RESOLUTION; // BitsPerSample
@@ -306,7 +267,7 @@ static uint32_t SaveDataToSDCard()
     wavHeader[43] = (uint8_t)((buffer_ctl.fptr >> 24) & 0xFF);
     retSD = f_write(&saveFile, wavHeader, 44, &bw);
     if (retSD != FR_OK || bw < 44) {
-        printf("Failed to write WAV header!ret:%d\r\nfile name is:%s\r\n", retSD, sector);
+        printf("Failed to write WAV header!ret:%d\r\n, file name is:%s\r\n", retSD, (char*)sector);
         f_close(&saveFile);
         sdFileOpened = 0;
         return 2;
@@ -314,7 +275,7 @@ static uint32_t SaveDataToSDCard()
     // write audio data
     retSD = f_write(&saveFile, (uint32_t *)AudioStartAddress, buffer_ctl.fptr, &bw);
     if (retSD != FR_OK || bw < buffer_ctl.fptr) {
-        printf("Failed to write audio data!ret:%d\r\nfile name is:%s\r\n", retSD, sector);
+        printf("Failed to write audio data!ret:%d\r\n, file name is:%s\r\n", retSD, (char*)sector);
         f_close(&saveFile);
         sdFileOpened = 0;
         return 3;
@@ -329,7 +290,62 @@ static uint32_t SaveDataToSDCard()
     return 0;
 }
 
-wavInfo wavInfoNow;
+/**
+ * AI is suck!
+ * This function create by myself works great
+ * btr should always be actualSize * numChannels, for example, if the file only contains one channel, btr should
+ * always be divided by 2.
+ * @param fileHandler
+ * @param fileOffset
+ * @param SDRAMOffset
+ * @param btr
+ * @param numChannels
+ * @return
+ */
+int8_t readDataFromFileToSDRAM(FIL* fileHandler, const uint32_t fileOffset, const uint32_t SDRAMOffset,
+                               const uint32_t btr, const uint8_t numChannels)
+{
+    uint32_t bytesAlreadyRead = 0;
+    UINT bytesRead = 0;
+    retSD = f_lseek(fileHandler, fileOffset);
+    if (retSD != FR_OK) {
+        printf("lseek file failed, ret: %d\r\n", retSD);
+        return 1;
+    }
+    if (numChannels == 1) {
+        while (bytesAlreadyRead < btr) {
+            const UINT toRead = (btr - bytesAlreadyRead) < FILE_READ_ONCE_BYTES ? btr - bytesAlreadyRead : FILE_READ_ONCE_BYTES;
+            retSD = f_read(fileHandler, sector, toRead, &bytesRead);
+            if (retSD != FR_OK) {
+                printf("read file failed, ret: %d\r\n", retSD);
+                return 2;
+            }
+            SCB_CleanDCache_by_Addr((uint32_t *) &sector[0], FILE_READ_ONCE_BYTES);
+            for (uint32_t i = 0; i < bytesRead; i++) {
+                external_buffer[SDRAMOffset + (bytesAlreadyRead << 1) + (i << 1)] = sector[i];
+                external_buffer[SDRAMOffset + (bytesAlreadyRead << 1) + (i << 1) + 1] = sector[i];
+            }
+            SCB_CleanDCache_by_Addr((uint32_t *) &sector[0], FILE_READ_ONCE_BYTES);
+            bytesAlreadyRead += bytesRead;
+        }
+    } else {
+        while (bytesAlreadyRead < btr) {
+            const UINT toRead = (btr - bytesAlreadyRead) < FILE_READ_ONCE_BYTES ? btr - bytesAlreadyRead : FILE_READ_ONCE_BYTES;
+            f_read(fileHandler, sector, toRead, &bytesRead);
+            if (retSD != FR_OK) {
+                printf("read file failed, ret: %d\r\n", retSD);
+                return 2;
+            }
+            SCB_CleanDCache_by_Addr((uint32_t *) &sector[0], FILE_READ_ONCE_BYTES);
+            for (uint32_t i = 0; i < bytesRead; i++) {
+                external_buffer[SDRAMOffset + bytesAlreadyRead + i] = sector[i];
+            }
+            SCB_CleanDCache_by_Addr((uint32_t *) &sector[0], FILE_READ_ONCE_BYTES);
+            bytesAlreadyRead += bytesRead;
+        }
+    }
+    return 0;
+}
 
 /**
  * start to play wav File first time to read start DMA
@@ -339,12 +355,12 @@ wavInfo wavInfoNow;
  */
 uint8_t StartPlayback(const char* path, const uint16_t initVolume)
 {
-    FRESULT res;
-    uint32_t bytesRead;
     FIL startFile;
 
     osThreadDef(audioFillerTask, audioFiller_Task, osPriorityHigh, 0, 2048);
     audioFillerTaskHandle = osThreadCreate(osThread(audioFillerTask), NULL);
+
+    memcpy(playingFileName, path, strlen(path));
 
     if (sdFileOpened) {
         sdFileOpened = 0;
@@ -354,8 +370,8 @@ uint8_t StartPlayback(const char* path, const uint16_t initVolume)
         return 1; // wav header error
     }
     // openFile
-    res = f_open(&startFile, path, FA_READ);
-    if (res != FR_OK) {
+    retSD = f_open(&startFile, playingFileName, FA_READ);
+    if (retSD != FR_OK) {
         f_close(&startFile);
         return 2; // open failed
     }
@@ -372,14 +388,25 @@ uint8_t StartPlayback(const char* path, const uint16_t initVolume)
     sdFileReadOffset = 0;
 
     // firstly move wav data chunk first Initial_read_bytes read in SDRAM (start in dataChunkPos)
-    uint32_t toRead = INITIAL_READ_BYTES;
-    // read all the file into SDRAM
-    toRead = wavInfoNow.dataChunkSize;
-    if (SD_ReadToSDRAM_block(wavInfoNow.dataChunkPos + sdFileReadOffset, 0, toRead) != FR_OK) {
+    uint32_t toRead = INITIAL_READ_BYTES * wavInfoNow.numChannels / 2;
+    // // read all the file into SDRAM
+    // toRead = wavInfoNow.dataChunkSize;
+    // if (readDataFromFileToSDRAM(wavInfoNow.dataChunkPos + sdFileReadOffset, 0, toRead) != FR_OK) {
+    //     f_close(&startFile);
+    //     sdFileOpened = 0;
+    //     return 4; // read failed
+    // }
+    if (toRead > wavInfoNow.dataChunkSize) {
+        toRead = wavInfoNow.dataChunkSize;
+    }
+    if (readDataFromFileToSDRAM(&startFile, wavInfoNow.dataChunkPos, 0, toRead,
+        wavInfoNow.numChannels) != 0) {
         f_close(&startFile);
         sdFileOpened = 0;
         return 4; // read failed
     }
+    // use actual bytes read
+    sdFileReadOffset += toRead;
 
     retSD = f_close(&startFile);
     if (retSD != FR_OK)
@@ -389,9 +416,6 @@ uint8_t StartPlayback(const char* path, const uint16_t initVolume)
     uwPauseEnabledStatus = 0; /* 0 when audio is running, 1 when Pause is on */
     audio_pause_flag = 0;
     uwVolume = initVolume;
-
-    // use actual bytes read
-    sdFileReadOffset += toRead;
 
     if (BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_SPEAKER, uwVolume, wavInfoNow.sampleRate) == 0) {
         printf("AUDIO CODEC   OK  \r\n");
@@ -407,11 +431,13 @@ uint8_t StartPlayback(const char* path, const uint16_t initVolume)
 
     buffer_ctl.state = BUFFER_OFFSET_NONE;
     AudioStartAddress = (uint32_t)external_buffer;
-    AudioFileSize = wavInfoNow.dataChunkSize;
-    bytesRead = GetData((void *)AudioStartAddress,
-                        0,
-                        &buffer_ctl.buff[0],
-                        AUDIO_BUFFER_SIZE);
+    // actual data size should be chunkSize * channelNum
+    AudioFileSize = wavInfoNow.dataChunkSize * wavInfoNow.numChannels;
+    AudioFilePlayed = 0; //INITIAL_READ_BYTES * wavInfoNow.numChannels / 2;
+    const uint32_t bytesRead = GetData((void *) AudioStartAddress,
+                                 0,
+                                 &buffer_ctl.buff[0],
+                                 AUDIO_BUFFER_SIZE);
 
     // start play audio
     if(bytesRead > 0)
@@ -455,16 +481,18 @@ uint8_t StartRecord()
 void audioFiller_Task(const void *argument)
 {
     uint32_t bytesRead;
+    FIL fillFile;
     (void)argument;
 
     /* infinite loop */
-    while (1) {
+    for (;;) {
         if (audio_out_error_flag) {
             audio_out_error_flag = 0;
             printf("Audio ERROR callback occurred, stopping playback\r\n");
             BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
             sdFileOpened = 0;
             osThreadTerminate(audioFillerTaskHandle);
+            break;
         }
 
         if (audio_in_error_flag) {
@@ -472,6 +500,7 @@ void audioFiller_Task(const void *argument)
             printf("Audio ERROR callback occurred, stopping record\r\n");
             BSP_AUDIO_IN_Stop(CODEC_PDWN_SW);
             osThreadTerminate(audioFillerTaskHandle);
+            break;
         }
 
         if (audio_save_flag) {
@@ -483,11 +512,12 @@ void audioFiller_Task(const void *argument)
             }
             osSemaphoreRelease(saveFiniSemHandle);
             osThreadTerminate(audioFillerTaskHandle);
+            break;
         }
 
         switch (audio_state) {
             case AUDIO_STATE_PLAYING:
-                if (buffer_ctl.fptr >= AudioFileSize) {
+                if (buffer_ctl.fptr * wavInfoNow.numChannels / 2 + AudioFilePlayed >= AudioFileSize) {
                     /* Play audio sample again ... */
                     buffer_ctl.fptr = 0;
                     printf("play stopped!\r\n");
@@ -526,6 +556,60 @@ void audioFiller_Task(const void *argument)
                         SCB_CleanDCache_by_Addr((uint32_t *) &buffer_ctl.buff[AUDIO_BUFFER_SIZE / 2],
                                                 AUDIO_BUFFER_SIZE / 2);
                     }
+                }
+                if (buffer_ctl.fptr == EVERYTIME_READ_BYTES) {
+                    UINT toRead = EVERYTIME_READ_BYTES * wavInfoNow.numChannels / 2;
+                    if (toRead > wavInfoNow.fileSize - sdFileReadOffset - wavInfoNow.dataChunkPos) {
+                        toRead = wavInfoNow.fileSize - sdFileReadOffset - wavInfoNow.dataChunkPos;
+                    }
+                    retSD = f_open(&fillFile, playingFileName, FA_READ);
+                    if (retSD != FR_OK) {
+                        f_close(&fillFile);
+                        printf("error when refilling SDRAM, open file failed, ret:%d", retSD);
+                        audio_out_error_flag = 1;
+                    }
+                    sdFileOpened = 1;
+                    if (readDataFromFileToSDRAM(&fillFile, wavInfoNow.dataChunkPos + sdFileReadOffset,
+                        0, toRead, wavInfoNow.numChannels) != 0) {
+                        f_close(&fillFile);
+                        printf("error when refilling SDRAM, read file failed");
+                        audio_out_error_flag = 1;
+
+                    }
+                    sdFileReadOffset += toRead;
+                    retSD = f_close(&fillFile);
+                    if (retSD != FR_OK) {
+                        printf("error when refilling SDRAM, close file failed, ret:%d", retSD);
+                        audio_out_error_flag = 1;
+                    }
+                }
+                if (buffer_ctl.fptr == INITIAL_READ_BYTES) {
+                    UINT toRead = EVERYTIME_READ_BYTES * wavInfoNow.numChannels / 2;
+                    if (toRead > wavInfoNow.fileSize - sdFileReadOffset - wavInfoNow.dataChunkPos) {
+                        toRead = wavInfoNow.fileSize - sdFileReadOffset - wavInfoNow.dataChunkPos;
+                    }
+                    retSD = f_open(&fillFile, playingFileName, FA_READ);
+                    if (retSD != FR_OK) {
+                        f_close(&fillFile);
+                        printf("error when refilling SDRAM, open file failed, ret:%d", retSD);
+                        audio_out_error_flag = 1;
+                    }
+                    sdFileOpened = 1;
+                    if (readDataFromFileToSDRAM(&fillFile, wavInfoNow.dataChunkPos + sdFileReadOffset,
+                        EVERYTIME_READ_BYTES, toRead, wavInfoNow.numChannels) != 0) {
+                        f_close(&fillFile);
+                        printf("error when refilling SDRAM, read file failed");
+                        audio_out_error_flag = 1;
+                    }
+                    sdFileReadOffset += toRead;
+                    retSD = f_close(&fillFile);
+                    if (retSD != FR_OK) {
+                        printf("error when refilling SDRAM, close file failed, ret:%d", retSD);
+                        audio_out_error_flag = 1;
+                    }
+                    buffer_ctl.fptr = 0;
+                    AudioFilePlayed += INITIAL_READ_BYTES * wavInfoNow.numChannels / 2;
+                    printf("play returned to 0 of SDRAM\r\n");
                 }
                 break;
             case AUDIO_STATE_RECORDING:
@@ -574,7 +658,7 @@ void audioFiller_Task(const void *argument)
                 printf("Audio busy, skipping pause/resume\r\n");
             } else if (audio_pause_flag) {
                 if (uwPauseEnabledStatus == 1) {
-                    int ret = BSP_AUDIO_OUT_Resume();
+                    const int ret = BSP_AUDIO_OUT_Resume();
                     if (ret == 0) {
                         printf("Resume OK!!\r\n");
                         uwPauseEnabledStatus = 0;
@@ -586,7 +670,7 @@ void audioFiller_Task(const void *argument)
                     }
                     osDelay(1);
                 } else {
-                    int ret = BSP_AUDIO_OUT_Pause();
+                    const int ret = BSP_AUDIO_OUT_Pause();
                     if (ret == 0) {
                         printf("Pause OK!!\r\n");
                         uwPauseEnabledStatus = 1;

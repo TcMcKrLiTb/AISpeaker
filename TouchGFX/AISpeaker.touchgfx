@@ -597,8 +597,8 @@
           {
             "Type": "ButtonWithIcon",
             "Name": "startTalkButton",
-            "X": 359,
-            "Y": 89,
+            "X": 364,
+            "Y": 29,
             "Width": 60,
             "Height": 60,
             "Pressed": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_pressed.png",
@@ -614,11 +614,10 @@
           {
             "Type": "ButtonWithIcon",
             "Name": "stopTalkButton",
-            "X": 359,
-            "Y": 89,
+            "X": 364,
+            "Y": 29,
             "Width": 60,
             "Height": 60,
-            "Visible": false,
             "Pressed": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_pressed.png",
             "Released": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_normal.png",
             "IconPressed": "__generated\\icon_theme_images_action_done_40_40_E8F6FB.svg.png",
@@ -632,8 +631,8 @@
           {
             "Type": "AnimatedImage",
             "Name": "animatedImage1",
-            "X": 357,
-            "Y": 179,
+            "X": 362,
+            "Y": 165,
             "Width": 64,
             "Height": 64,
             "FileNameFirst": "loading\\frame1.png",
@@ -641,6 +640,62 @@
             "UpdateTicksInterval": 200,
             "StartOnLoad": true,
             "LoopEnabled": true
+          },
+          {
+            "Type": "TextProgress",
+            "Name": "textProgress1",
+            "X": 345,
+            "Y": 229,
+            "Width": 175,
+            "Height": 50,
+            "TextId": "__SingleUse_4L1F",
+            "Color": {
+              "Red": 12,
+              "Green": 27,
+              "Blue": 55
+            },
+            "FileNameBackground": "__generated\\alternate_theme_images_widgets_button_regular_height_36_tiny_rounded_inactive.png",
+            "IndicatorPositionY": 5,
+            "IndicatorPositionWidth": 100,
+            "IndicatorPositionHeight": 30,
+            "ProgressRangeMax": 100,
+            "ProgressInitialValue": 60
+          },
+          {
+            "Type": "ScalableImage",
+            "Name": "dialogBackground",
+            "X": 34,
+            "Y": 23,
+            "Width": 280,
+            "Height": 230,
+            "Filename": "__generated\\alternate_theme_images_containers_large_narrow_outlined_light.png",
+            "ScalingAlgorithm": "Nearest-neighbor"
+          },
+          {
+            "Type": "ScrollableContainer",
+            "Name": "dialogContainer",
+            "X": 34,
+            "Y": 27,
+            "Width": 275,
+            "Height": 221,
+            "HorizontalScrollEnabled": true,
+            "VerticalScrollEnabled": true,
+            "ScrollbarsVisibleOnPressed": true,
+            "ScrollbarsColor": {
+              "Green": 42,
+              "Blue": 255
+            },
+            "ScrollbarsAlpha": 255,
+            "Components": [
+              {
+                "Type": "ListLayout",
+                "Name": "dialogList",
+                "Width": 250,
+                "Height": 250,
+                "Direction": "South",
+                "Components": []
+              }
+            ]
           }
         ],
         "Interactions": [
@@ -736,6 +791,42 @@
             }
           }
         ]
+      },
+      {
+        "Name": "dialogElement",
+        "Width": 275,
+        "Height": 272,
+        "Components": [
+          {
+            "Type": "BoxWithBorder",
+            "Name": "boxWithBorder1",
+            "X": 43,
+            "Y": 4,
+            "Width": 232,
+            "Height": 265,
+            "Color": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            },
+            "BorderSize": 3
+          },
+          {
+            "Type": "TextArea",
+            "Name": "dialogInfo",
+            "X": 51,
+            "Y": 10,
+            "Width": 217,
+            "Height": 252,
+            "TextId": "__SingleUse_5D3G",
+            "TextRotation": "0",
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 1000
+            }
+          }
+        ],
+        "Interactions": []
       }
     ],
     "Name": "AISpeaker",

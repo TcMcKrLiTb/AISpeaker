@@ -11,6 +11,10 @@
 #include <touchgfx/widgets/Image.hpp>
 #include <touchgfx/widgets/ButtonWithIcon.hpp>
 #include <touchgfx/widgets/AnimatedImage.hpp>
+#include <touchgfx/containers/progress_indicators/TextProgress.hpp>
+#include <touchgfx/widgets/ScalableImage.hpp>
+#include <touchgfx/containers/ScrollableContainer.hpp>
+#include <touchgfx/containers/ListLayout.hpp>
 
 class AISpeakerPageViewBase : public touchgfx::View<AISpeakerPagePresenter>
 {
@@ -44,6 +48,10 @@ protected:
     touchgfx::ButtonWithIcon startTalkButton;
     touchgfx::ButtonWithIcon stopTalkButton;
     touchgfx::AnimatedImage animatedImage1;
+    touchgfx::TextProgress textProgress1;
+    touchgfx::ScalableImage dialogBackground;
+    touchgfx::ScrollableContainer dialogContainer;
+    touchgfx::ListLayout dialogList;
 
 private:
 

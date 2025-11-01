@@ -4,6 +4,7 @@
 #include <gui_generated/aispeakerpage_screen/AISpeakerPageViewBase.hpp>
 #include <touchgfx/Color.hpp>
 #include <images/BitmapDatabase.hpp>
+#include <texts/TextKeysAndLanguages.hpp>
 
 AISpeakerPageViewBase::AISpeakerPageViewBase() :
     buttonCallback(this, &AISpeakerPageViewBase::buttonCallbackHandler)
@@ -16,24 +17,46 @@ AISpeakerPageViewBase::AISpeakerPageViewBase() :
     image1.setBitmap(touchgfx::Bitmap(BITMAP_LIGHT_THEME_IMAGES_BACKGROUNDS_480X272_SHADY_WAVES_ID));
     add(image1);
 
-    startTalkButton.setXY(359, 89);
+    startTalkButton.setXY(364, 29);
     startTalkButton.setBitmaps(touchgfx::Bitmap(BITMAP_LIGHT_THEME_IMAGES_WIDGETS_BUTTON_ICON_ROUNDED_TINY_FILL_NORMAL_ID), touchgfx::Bitmap(BITMAP_LIGHT_THEME_IMAGES_WIDGETS_BUTTON_ICON_ROUNDED_TINY_FILL_PRESSED_ID), touchgfx::Bitmap(BITMAP_ICON_THEME_IMAGES_AV_MIC_40_40_E8F6FB_SVG_ID), touchgfx::Bitmap(BITMAP_ICON_THEME_IMAGES_ACTION_DONE_40_40_E8F6FB_SVG_ID));
     startTalkButton.setIconXY(10, 10);
     startTalkButton.setAction(buttonCallback);
     add(startTalkButton);
 
-    stopTalkButton.setXY(359, 89);
+    stopTalkButton.setXY(364, 29);
     stopTalkButton.setBitmaps(touchgfx::Bitmap(BITMAP_LIGHT_THEME_IMAGES_WIDGETS_BUTTON_ICON_ROUNDED_TINY_FILL_NORMAL_ID), touchgfx::Bitmap(BITMAP_LIGHT_THEME_IMAGES_WIDGETS_BUTTON_ICON_ROUNDED_TINY_FILL_PRESSED_ID), touchgfx::Bitmap(BITMAP_ICON_THEME_IMAGES_AV_STOP_CIRCLE_40_40_E8F6FB_SVG_ID), touchgfx::Bitmap(BITMAP_ICON_THEME_IMAGES_ACTION_DONE_40_40_E8F6FB_SVG_ID));
     stopTalkButton.setIconXY(10, 10);
-    stopTalkButton.setVisible(false);
     stopTalkButton.setAction(buttonCallback);
     add(stopTalkButton);
 
-    animatedImage1.setXY(357, 179);
+    animatedImage1.setXY(362, 165);
     animatedImage1.setBitmaps(BITMAP_FRAME1_ID, BITMAP_FRAME15_ID);
     animatedImage1.setUpdateTicksInterval(12);
     animatedImage1.startAnimation(false, true, true);
     add(animatedImage1);
+
+    textProgress1.setXY(345, 229);
+    textProgress1.setProgressIndicatorPosition(0, 5, 100, 30);
+    textProgress1.setRange(0, 100);
+    textProgress1.setColor(touchgfx::Color::getColorFromRGB(12, 27, 55));
+    textProgress1.setTypedText(touchgfx::TypedText(T___SINGLEUSE_4L1F));
+    textProgress1.setBackground(touchgfx::Bitmap(BITMAP_ALTERNATE_THEME_IMAGES_WIDGETS_BUTTON_REGULAR_HEIGHT_36_TINY_ROUNDED_INACTIVE_ID));
+    textProgress1.setValue(60);
+    add(textProgress1);
+
+    dialogBackground.setBitmap(touchgfx::Bitmap(BITMAP_ALTERNATE_THEME_IMAGES_CONTAINERS_LARGE_NARROW_OUTLINED_LIGHT_ID));
+    dialogBackground.setPosition(34, 23, 280, 230);
+    dialogBackground.setScalingAlgorithm(touchgfx::ScalableImage::NEAREST_NEIGHBOR);
+    add(dialogBackground);
+
+    dialogContainer.setPosition(34, 27, 275, 221);
+    dialogContainer.setScrollbarsColor(touchgfx::Color::getColorFromRGB(0, 42, 255));
+    dialogContainer.setScrollbarsAlpha(255);
+    dialogList.setPosition(0, 0, 250, 250);
+    dialogList.setDirection(touchgfx::SOUTH);
+    dialogContainer.add(dialogList);
+
+    add(dialogContainer);
 }
 
 AISpeakerPageViewBase::~AISpeakerPageViewBase()
