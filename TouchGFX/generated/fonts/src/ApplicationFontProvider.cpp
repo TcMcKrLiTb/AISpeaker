@@ -27,6 +27,12 @@ touchgfx::Font* ApplicationFontProvider::getFont(touchgfx::FontId typography)
     case Typography::HYJIANGNAN:
         // HYJiangNanKai_TTF_15_4bpp
         return const_cast<touchgfx::Font*>(TypedTextDatabase::getFonts()[5]);
+    case Typography::HYJIANGNANLITTLE:
+        // HYJiangNanKai_TTF_10_4bpp
+        return const_cast<touchgfx::Font*>(TypedTextDatabase::getFonts()[6]);
+    case Typography::HYXINHAISMALL:
+        // HYXinHaiXingKaiW_TTF_15_4bpp
+        return const_cast<touchgfx::Font*>(TypedTextDatabase::getFonts()[7]);
     default:
         return 0;
     }

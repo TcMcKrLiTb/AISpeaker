@@ -19,17 +19,21 @@ struct Typography
     static const touchgfx::FontId HYXINHAI = 3;
     static const touchgfx::FontId HYBLACKMYTH = 4;
     static const touchgfx::FontId HYJIANGNAN = 5;
+    static const touchgfx::FontId HYJIANGNANLITTLE = 6;
+    static const touchgfx::FontId HYXINHAISMALL = 7;
 };
 
 struct TypographyFontIndex
 {
-    static const touchgfx::FontId DEFAULT = 0;     // verdana_20_4bpp
-    static const touchgfx::FontId LARGE = 1;       // verdana_40_4bpp
-    static const touchgfx::FontId SMALL = 2;       // verdana_10_4bpp
-    static const touchgfx::FontId HYXINHAI = 3;    // HYBlackMythU_20_4bpp
-    static const touchgfx::FontId HYBLACKMYTH = 4; // HYBlackMythU_30_4bpp
-    static const touchgfx::FontId HYJIANGNAN = 5;  // HYJiangNanKai_TTF_15_4bpp
-    static const uint16_t NUMBER_OF_FONTS = 6;
+    static const touchgfx::FontId DEFAULT = 0;          // verdana_20_4bpp
+    static const touchgfx::FontId LARGE = 1;            // verdana_40_4bpp
+    static const touchgfx::FontId SMALL = 2;            // verdana_10_4bpp
+    static const touchgfx::FontId HYXINHAI = 3;         // HYBlackMythU_20_4bpp
+    static const touchgfx::FontId HYBLACKMYTH = 4;      // HYBlackMythU_30_4bpp
+    static const touchgfx::FontId HYJIANGNAN = 5;       // HYJiangNanKai_TTF_15_4bpp
+    static const touchgfx::FontId HYJIANGNANLITTLE = 6; // HYJiangNanKai_TTF_10_4bpp
+    static const touchgfx::FontId HYXINHAISMALL = 7;    // HYXinHaiXingKaiW_TTF_15_4bpp
+    static const uint16_t NUMBER_OF_FONTS = 8;
 };
 
 class ApplicationFontProvider : public touchgfx::FontProvider

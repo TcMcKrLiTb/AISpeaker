@@ -50,6 +50,7 @@ AISpeakerPageViewBase::AISpeakerPageViewBase() :
     add(dialogBackground);
 
     dialogContainer.setPosition(34, 27, 275, 221);
+    dialogContainer.enableHorizontalScroll(false);
     dialogContainer.setScrollbarsColor(touchgfx::Color::getColorFromRGB(0, 42, 255));
     dialogContainer.setScrollbarsAlpha(255);
     dialogList.setPosition(0, 0, 250, 250);
@@ -57,6 +58,36 @@ AISpeakerPageViewBase::AISpeakerPageViewBase() :
     dialogContainer.add(dialogList);
 
     add(dialogContainer);
+
+    speedText.setXY(325, 106);
+    speedText.setColor(touchgfx::Color::getColorFromRGB(0, 0, 0));
+    speedText.setLinespacing(0);
+    speedText.setTypedText(touchgfx::TypedText(T___SINGLEUSE_ZA30));
+    add(speedText);
+
+    emotionText.setXY(325, 136);
+    emotionText.setColor(touchgfx::Color::getColorFromRGB(0, 0, 0));
+    emotionText.setLinespacing(0);
+    emotionText.setTypedText(touchgfx::TypedText(T___SINGLEUSE_2LDR));
+    add(emotionText);
+
+    speedInstruction.setXY(387, 106);
+    speedInstruction.setColor(touchgfx::Color::getColorFromRGB(3, 24, 255));
+    speedInstruction.setLinespacing(0);
+    speedInstructionBuffer[0] = 0;
+    speedInstruction.setWildcard(speedInstructionBuffer);
+    speedInstruction.resizeToCurrentText();
+    speedInstruction.setTypedText(touchgfx::TypedText(T___SINGLEUSE_C9G6));
+    add(speedInstruction);
+
+    emotionInstruction.setXY(387, 136);
+    emotionInstruction.setColor(touchgfx::Color::getColorFromRGB(12, 166, 7));
+    emotionInstruction.setLinespacing(0);
+    emotionInstructionBuffer[0] = 0;
+    emotionInstruction.setWildcard(emotionInstructionBuffer);
+    emotionInstruction.resizeToCurrentText();
+    emotionInstruction.setTypedText(touchgfx::TypedText(T___SINGLEUSE_65SB));
+    add(emotionInstruction);
 }
 
 AISpeakerPageViewBase::~AISpeakerPageViewBase()

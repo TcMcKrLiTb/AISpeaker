@@ -15,6 +15,8 @@
 #include <touchgfx/widgets/ScalableImage.hpp>
 #include <touchgfx/containers/ScrollableContainer.hpp>
 #include <touchgfx/containers/ListLayout.hpp>
+#include <touchgfx/widgets/TextArea.hpp>
+#include <touchgfx/widgets/TextAreaWithWildcard.hpp>
 
 class AISpeakerPageViewBase : public touchgfx::View<AISpeakerPagePresenter>
 {
@@ -52,6 +54,18 @@ protected:
     touchgfx::ScalableImage dialogBackground;
     touchgfx::ScrollableContainer dialogContainer;
     touchgfx::ListLayout dialogList;
+    touchgfx::TextArea speedText;
+    touchgfx::TextArea emotionText;
+    touchgfx::TextAreaWithOneWildcard speedInstruction;
+    touchgfx::TextAreaWithOneWildcard emotionInstruction;
+
+    /*
+     * Wildcard Buffers
+     */
+    static const uint16_t SPEEDINSTRUCTION_SIZE = 10;
+    touchgfx::Unicode::UnicodeChar speedInstructionBuffer[SPEEDINSTRUCTION_SIZE];
+    static const uint16_t EMOTIONINSTRUCTION_SIZE = 10;
+    touchgfx::Unicode::UnicodeChar emotionInstructionBuffer[EMOTIONINSTRUCTION_SIZE];
 
 private:
 

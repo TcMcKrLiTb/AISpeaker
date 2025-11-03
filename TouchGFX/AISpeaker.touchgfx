@@ -678,7 +678,6 @@
             "Y": 27,
             "Width": 275,
             "Height": 221,
-            "HorizontalScrollEnabled": true,
             "VerticalScrollEnabled": true,
             "ScrollbarsVisibleOnPressed": true,
             "ScrollbarsColor": {
@@ -696,6 +695,68 @@
                 "Components": []
               }
             ]
+          },
+          {
+            "Type": "TextArea",
+            "Name": "speedText",
+            "X": 325,
+            "Y": 106,
+            "Width": 45,
+            "Height": 19,
+            "TextId": "__SingleUse_ZA30",
+            "TextRotation": "0",
+            "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "emotionText",
+            "X": 325,
+            "Y": 136,
+            "Width": 45,
+            "Height": 19,
+            "TextId": "__SingleUse_2LDR",
+            "TextRotation": "0",
+            "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "speedInstruction",
+            "X": 387,
+            "Y": 106,
+            "Width": 104,
+            "Height": 19,
+            "TextId": "__SingleUse_C9G6",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 3,
+              "Green": 24,
+              "Blue": 255
+            },
+            "AutoSize": true,
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 10
+            }
+          },
+          {
+            "Type": "TextArea",
+            "Name": "emotionInstruction",
+            "X": 387,
+            "Y": 136,
+            "Width": 18,
+            "Height": 19,
+            "TextId": "__SingleUse_65SB",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 12,
+              "Green": 166,
+              "Blue": 7
+            },
+            "AutoSize": true,
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 10
+            }
           }
         ],
         "Interactions": [
