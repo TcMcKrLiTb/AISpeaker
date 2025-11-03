@@ -636,8 +636,8 @@
             "Width": 64,
             "Height": 64,
             "FileNameFirst": "loading\\frame1.png",
-            "FileNameLast": "loading\\frame15.png",
-            "UpdateTicksInterval": 200,
+            "FileNameLast": "loading\\frame8.png",
+            "UpdateTicksInterval": 80,
             "StartOnLoad": true,
             "LoopEnabled": true
           },

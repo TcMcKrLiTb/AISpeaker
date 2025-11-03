@@ -30,8 +30,8 @@ AISpeakerPageViewBase::AISpeakerPageViewBase() :
     add(stopTalkButton);
 
     animatedImage1.setXY(362, 165);
-    animatedImage1.setBitmaps(BITMAP_FRAME1_ID, BITMAP_FRAME15_ID);
-    animatedImage1.setUpdateTicksInterval(12);
+    animatedImage1.setBitmaps(BITMAP_FRAME1_ID, BITMAP_FRAME8_ID);
+    animatedImage1.setUpdateTicksInterval(5);
     animatedImage1.startAnimation(false, true, true);
     add(animatedImage1);
 

@@ -154,12 +154,6 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/image_clay_theme_slider.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/image_clay_theme_slider_light.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame1.cpp
-    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame10.cpp
-    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame11.cpp
-    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame12.cpp
-    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame13.cpp
-    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame14.cpp
-    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame15.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame2.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame3.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame4.cpp
@@ -167,7 +161,6 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame6.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame7.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame8.cpp
-    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame9.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/texts/src/LanguageGb.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/texts/src/Texts.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/texts/src/TypedTextDatabase.cpp

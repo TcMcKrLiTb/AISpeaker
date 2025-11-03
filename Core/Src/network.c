@@ -719,14 +719,14 @@ void doSendAudioToZhiPuServer()
     uint16_t descLen = 0;
 
     if (nowSettingEmotion && nowSettingSpeed) {
-        descLen = snprintf(descStr, 100, "请用%s的语气和%s的语速说", EmotionString[nowSettingEmotion],
+        descLen = snprintf(descStr, 100, "请用%s的语气和%s的语速说，声音洪亮发音清晰", EmotionString[nowSettingEmotion],
             SpeedString[nowSettingSpeed]);
     } else if (nowSettingSpeed) {
-        descLen = snprintf(descStr, 100, "请用%s的语速说", SpeedString[nowSettingSpeed]);
+        descLen = snprintf(descStr, 100, "请用%s的语速说，声音洪亮发音清晰", SpeedString[nowSettingSpeed]);
     } else if (nowSettingEmotion) {
-        descLen = snprintf(descStr, 100, "请用%s的语气说", EmotionString[nowSettingEmotion]);
+        descLen = snprintf(descStr, 100, "请用%s的语气说，声音洪亮发音清晰", EmotionString[nowSettingEmotion]);
     } else {
-        descLen = snprintf(descStr, 100, "请用正常语气发音清晰");
+        descLen = snprintf(descStr, 100, "请用正常语气正常语速发音清晰，声音洪亮");
     }
 
     printf("now prompt is: %s\r\n", descStr);

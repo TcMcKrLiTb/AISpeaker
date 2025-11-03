@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextDatabase xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="texts.xsd" Version="4.26.0">
+  <Languages>
+    <Language Id="GB" />
+  </Languages>
+  <Texts>
+    <TextGroup Id="AISpeaker">
+      <Text Id="middleEmotion" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">中性地</Translation>
+      </Text>
+      <Text Id="seriousEmotion" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">严肃地</Translation>
+      </Text>
+      <Text Id="sadEmotion" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">悲伤地</Translation>
+      </Text>
+      <Text Id="happyEmotion" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">开心地</Translation>
+      </Text>
+      <Text Id="normalSpeed" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">正常地</Translation>
+      </Text>
+      <Text Id="slowSpeed" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">慢慢地</Translation>
+      </Text>
+      <Text Id="fastSpeed" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">快速地</Translation>
+      </Text>
+      <Text Id="__SingleUse_5D3G" Alignment="Left" TypographyId="HYJiangNanLittle">
+        <Translation Language="GB">&lt;string&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_ZA30" Alignment="Left" TypographyId="HYJiangNan">
+        <Translation Language="GB">语速：</Translation>
+      </Text>
+      <Text Id="__SingleUse_2LDR" Alignment="Left" TypographyId="HYJiangNan">
+        <Translation Language="GB">语气：</Translation>
+      </Text>
+      <Text Id="__SingleUse_C9G6" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">&lt;s&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_65SB" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">&lt;s&gt;</Translation>
+      </Text>
+    </TextGroup>
+    <TextGroup Id="RecorderText">
+      <Text Id="DeviceFailed" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">初始化失败</Translation>
+      </Text>
+      <Text Id="DeviceReady" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">就绪</Translation>
+      </Text>
+      <Text Id="Saving" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">保存中...</Translation>
+      </Text>
+      <Text Id="__SingleUse_VC3R" Alignment="Left" TypographyId="HYBlackMyth">
+        <Translation Language="GB">录音机</Translation>
+      </Text>
+      <Text Id="StopRecord" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">录制结束</Translation>
+      </Text>
+      <Text Id="StartRecord" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">开始录制</Translation>
+      </Text>
+      <Text Id="TestText" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">测试测试测试</Translation>
+      </Text>
+      <Text Id="__SingleUse_N3C9" Alignment="Center" TypographyId="HYXinHai">
+        <Translation Language="GB">&lt;value&gt;</Translation>
+      </Text>
+    </TextGroup>
+    <TextGroup Id="PlayerText">
+      <Text Id="errorAllocateFailed" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB" Alignment="Left">分配内存失败</Translation>
+      </Text>
+      <Text Id="errorMountFailed" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">挂载卡失败</Translation>
+      </Text>
+      <Text Id="errorNoSDCard" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">未检测到SD卡</Translation>
+      </Text>
+      <Text Id="volumeValue" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">100</Translation>
+      </Text>
+      <Text Id="__SingleUse_MD5H" Alignment="Center" TypographyId="HYXinHai">
+        <Translation Language="GB">音量&lt;d&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_G92X" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">&lt;s&gt;</Translation>
+      </Text>
+      <Text Id="waveFileName" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">testtesttesttesttesttesttest.wav</Translation>
+      </Text>
+      <Text Id="__SingleUse_FW2C" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">音频:&lt;s&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_RJSE" Alignment="Left" TypographyId="HYBlackMyth">
+        <Translation Language="GB">音频播放器</Translation>
+      </Text>
+      <Text Id="__SingleUse_DU0S" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB"></Translation>
+      </Text>
+      <Text Id="__SingleUse_L2CQ" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">文件数目：&lt;d&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_7XNW" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">第一个文件名：&lt;text&gt;</Translation>
+      </Text>
+    </TextGroup>
+    <TextGroup Id="Unsorted">
+      <Text Id="__SingleUse_JNHO" Alignment="Left" TypographyId="HYXinHaiSmall">
+        <Translation Language="GB">&lt;string&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_4L1F" Alignment="Center" TypographyId="HYXinHai">
+        <Translation Language="GB">&lt;&gt; %</Translation>
+      </Text>
+      <Text Id="newFileName" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">000000000000000</Translation>
+      </Text>
+      <Text Id="__SingleUse_6WMJ" Alignment="Center" TypographyId="HYJiangNan">
+        <Translation Language="GB">文件已保存为&lt;s&gt;</Translation>
+      </Text>
+      <Text Id="fileSizeCard" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">00000</Translation>
+      </Text>
+      <Text Id="__SingleUse_IV1Y" Alignment="Left" TypographyId="HYJiangNan">
+        <Translation Language="GB">采样率:&lt;value&gt;</Translation>
+      </Text>
+      <Text Id="sampleRateCard" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">00000</Translation>
+      </Text>
+      <Text Id="__SingleUse_Z5TA" Alignment="Left" TypographyId="HYJiangNan">
+        <Translation Language="GB">文件大小:&lt;value&gt;KB</Translation>
+      </Text>
+      <Text Id="errorTextCard" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">000000000000000</Translation>
+      </Text>
+      <Text Id="__SingleUse_JRN6" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">&lt;s&gt;</Translation>
+      </Text>
+      <Text Id="fileName" Alignment="Left" TypographyId="HYXinHai">
+        <Translation Language="GB">testtesttesttesttesttesttest.wav</Translation>
+      </Text>
+      <Text Id="__SingleUse_25RI" Alignment="Center" TypographyId="HYXinHai">
+        <Translation Language="GB">静音</Translation>
+      </Text>
+      <Text Id="__SingleUse_VPHE" Alignment="Center" TypographyId="HYXinHai">
+        <Translation Language="GB">停止</Translation>
+      </Text>
+      <Text Id="__SingleUse_XNVG" Alignment="Center" TypographyId="HYXinHai">
+        <Translation Language="GB">暂停</Translation>
+      </Text>
+      <Text Id="__SingleUse_RAE4" Alignment="Center" TypographyId="HYXinHai">
+        <Translation Language="GB">播放</Translation>
+      </Text>
+    </TextGroup>
+  </Texts>
+  <Typographies>
+    <Typography Id="Default" Font="verdana.ttf" Size="20" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" />
+    <Typography Id="Large" Font="verdana.ttf" Size="40" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" />
+    <Typography Id="Small" Font="verdana.ttf" Size="10" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" />
+    <Typography Id="HYXinHai" Font="HYBlackMythU.ttf" Size="20" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" WildcardCharacters="_+-[]" WidgetWildcardCharacters="0123456789." WildcardCharacterRanges="0-9,a-z,A-Z" />
+    <Typography Id="HYBlackMyth" Font="HYBlackMythU.ttf" Size="30" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" />
+    <Typography Id="HYJiangNan" Font="HYJiangNanKai.TTF" Size="15" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" WildcardCharacters=".+-=/\" WildcardCharacterRanges="0-9,a-z,A-Z" />
+    <Typography Id="HYJiangNanLittle" Font="HYJiangNanKai.TTF" Size="10" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" WildcardCharacters="!”&quot;#*%&amp;()'$+-@_, .:;?/~±×÷•º`´{}©£€^®¥_=[]¡¢|\¿&gt;&lt;【】；‘’，。、｛｝：“”《》？|·~！@#￥%……&amp;*（）—+" WildcardCharacterRanges="0x20-0x1BF,0X4e00-0X9f5a" />
+    <Typography Id="HYXinHaiSmall" Font="HYXinHaiXingKaiW.TTF" Size="15" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" />
+  </Typographies>
+</TextDatabase>

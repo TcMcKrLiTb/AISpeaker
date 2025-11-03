@@ -263,7 +263,9 @@ void AISpeakerPageView::chooseElementClicked(chooseElement& element, const int c
         speedContainer.setTouchable(false);
         speedList.invalidate();
         speedContainer.invalidate();
+#ifndef SIMULATOR
         nowSettingSpeed = static_cast<ReplySpeed>(chooseId);
+#endif
         Unicode::snprintf(speedInstructionBuffer, SPEEDINSTRUCTION_SIZE, "%s",
             touchgfx::TypedText(speedTextList[chooseId]).getText());
         speedInstruction.resizeToCurrentText();
@@ -274,7 +276,9 @@ void AISpeakerPageView::chooseElementClicked(chooseElement& element, const int c
         emotionContainer.setTouchable(false);
         emotionList.invalidate();
         emotionContainer.invalidate();
+#ifndef SIMULATOR
         nowSettingEmotion = static_cast<ReplyEmotion>(chooseId);
+#endif
         Unicode::snprintf(emotionInstructionBuffer, EMOTIONINSTRUCTION_SIZE, "%s",
             touchgfx::TypedText(emotionTextList[chooseId]).getText());
         emotionInstruction.resizeToCurrentText();
