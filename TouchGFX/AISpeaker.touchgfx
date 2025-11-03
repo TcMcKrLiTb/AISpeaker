@@ -736,7 +736,8 @@
             "Wildcard1": {
               "UseBuffer": true,
               "BufferSize": 10
-            }
+            },
+            "Clickable": true
           },
           {
             "Type": "TextArea",
@@ -756,7 +757,50 @@
             "Wildcard1": {
               "UseBuffer": true,
               "BufferSize": 10
-            }
+            },
+            "Clickable": true
+          },
+          {
+            "Type": "ScrollableContainer",
+            "Name": "emotionContainer",
+            "X": 387,
+            "Y": 135,
+            "Width": 85,
+            "Height": 59,
+            "VerticalScrollEnabled": true,
+            "ScrollbarsVisibleOnPressed": true,
+            "ScrollbarsAlpha": 255,
+            "Components": [
+              {
+                "Type": "ListLayout",
+                "Name": "emotionList",
+                "Width": 85,
+                "Height": 59,
+                "Direction": "South",
+                "Components": []
+              }
+            ]
+          },
+          {
+            "Type": "ScrollableContainer",
+            "Name": "speedContainer",
+            "X": 387,
+            "Y": 106,
+            "Width": 85,
+            "Height": 59,
+            "VerticalScrollEnabled": true,
+            "ScrollbarsVisibleOnPressed": true,
+            "ScrollbarsAlpha": 255,
+            "Components": [
+              {
+                "Type": "ListLayout",
+                "Name": "speedList",
+                "Width": 85,
+                "Height": 59,
+                "Direction": "South",
+                "Components": []
+              }
+            ]
           }
         ],
         "Interactions": [
@@ -888,6 +932,91 @@
           }
         ],
         "Interactions": []
+      },
+      {
+        "Name": "chooseElement",
+        "Width": 85,
+        "Height": 20,
+        "Components": [
+          {
+            "Type": "BoxWithBorder",
+            "Name": "chooseFrame",
+            "Width": 85,
+            "Height": 20,
+            "Color": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            },
+            "BorderColor": {
+              "Green": 74,
+              "Blue": 153
+            },
+            "BorderSize": 1
+          },
+          {
+            "Type": "TextArea",
+            "Name": "chooseInfo",
+            "Width": 85,
+            "Height": 20,
+            "TextId": "__SingleUse_JNHO",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 10
+            }
+          },
+          {
+            "Type": "FlexButton",
+            "Name": "selectButton",
+            "Width": 85,
+            "Height": 20,
+            "Alpha": 43,
+            "ButtonTrigger": {
+              "Type": "ClickButtonTrigger"
+            },
+            "ButtonStyles": [
+              {
+                "Type": "BoxWithBorderButtonStyle",
+                "Width": 85,
+                "Height": 20,
+                "LockToFlexButtonSize": true,
+                "BorderSize": 1,
+                "ColorReleased": {
+                  "Green": 102,
+                  "Blue": 153
+                },
+                "ColorPressed": {
+                  "Green": 153,
+                  "Blue": 204
+                },
+                "ColorBorderReleased": {
+                  "Green": 51,
+                  "Blue": 102
+                },
+                "ColorBorderPressed": {
+                  "Red": 51,
+                  "Green": 102,
+                  "Blue": 153
+                }
+              }
+            ]
+          }
+        ],
+        "Interactions": [
+          {
+            "InteractionName": "selectInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "selectButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "selectAction"
+            }
+          }
+        ]
       }
     ],
     "Name": "AISpeaker",

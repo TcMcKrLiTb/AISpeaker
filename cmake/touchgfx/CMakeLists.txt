@@ -27,6 +27,7 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/audiorecorder_screen/audioRecorderView.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/common/FrontendApplication.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/containers/WavFileElement.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/containers/chooseElement.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/containers/dialogElement.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/ethernettester_screen/EthernetTesterPresenter.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/ethernettester_screen/EthernetTesterView.cpp
@@ -115,6 +116,7 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/audiorecorder_screen/audioRecorderViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/common/FrontendApplicationBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/containers/WavFileElementBase.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/containers/chooseElementBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/containers/dialogElementBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/ethernettester_screen/EthernetTesterViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/fatfstester_screen/fatFSTesterViewBase.cpp

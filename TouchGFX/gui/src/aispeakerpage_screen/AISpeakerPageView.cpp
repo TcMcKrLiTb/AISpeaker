@@ -17,10 +17,19 @@ extern osSemaphoreId saveFiniSemHandle;
 extern osThreadId audioFillerTaskHandle;
 extern uint16_t AIRepliedFileNum;
 extern uint8_t streamBuffer[];
+extern ReplySpeed nowSettingSpeed;
+extern ReplyEmotion nowSettingEmotion;
 
 #endif
 
-AISpeakerPageView::AISpeakerPageView(): scrollGoal(0),animationCounter(0),animationIsRunning(false)
+AISpeakerPageView::AISpeakerPageView():
+speedClickedCallback(this, &AISpeakerPageView::speedClickHandle),
+emotionClickedCallback(this, &AISpeakerPageView::emotionClickHandle),
+chooseElementClickedCallback(this, &AISpeakerPageView::chooseElementClicked),
+scrollGoal(0),animationCounter(0),
+animationIsRunning(false),
+speedTextList{T_NORMALSPEED, T_FASTSPEED, T_SLOWSPEED},
+emotionTextList{T_MIDDLEEMOTION, T_HAPPYEMOTION, T_SADEMOTION, T_SERIOUSEMOTION}
 {
 
 }
@@ -38,6 +47,44 @@ void AISpeakerPageView::setupScreen()
     stopTalkButton.setTouchable(false);
     dialogList.invalidate();
     dialogContainer.invalidate();
+    Unicode::snprintf(speedInstructionBuffer, SPEEDINSTRUCTION_SIZE, "%s",
+        touchgfx::TypedText(speedTextList[SPEED_NORMAL]).getText());
+    Unicode::snprintf(emotionInstructionBuffer, EMOTIONINSTRUCTION_SIZE, "%s",
+        touchgfx::TypedText(emotionTextList[EMOTION_MIDDLE]).getText());
+    speedInstruction.resizeToCurrentText();
+    speedInstruction.invalidate();
+    emotionInstruction.resizeToCurrentText();
+    emotionInstruction.invalidate();
+    speedInstruction.setClickAction(speedClickedCallback);
+    emotionInstruction.setClickAction(emotionClickedCallback);
+
+    speedList.setHeight(0);
+    emotionList.setHeight(0);
+    for (int i = 0; i < SPEED_MAX_NUM; i++) {
+        speedChooseList[i].setupChooseElement(speedTextList[i], 0, i);
+        speedChooseList[i].setAction(chooseElementClickedCallback);
+        speedList.add(speedChooseList[i]);
+    }
+    for (int i = 0; i < EMOTION_MAX_NUM; i++) {
+        emotionChooseList[i].setupChooseElement(emotionTextList[i], 1, i);
+        emotionChooseList[i].setAction(chooseElementClickedCallback);
+        emotionList.add(emotionChooseList[i]);
+    }
+
+    speedList.setVisible(false);
+    speedContainer.setVisible(false);
+    speedList.setTouchable(false);
+    speedContainer.setTouchable(false);
+    speedList.invalidate();
+    speedContainer.invalidate();
+    emotionList.setVisible(false);
+    emotionContainer.setVisible(false);
+    emotionList.setTouchable(false);
+    emotionContainer.setTouchable(false);
+    emotionList.invalidate();
+    emotionContainer.invalidate();
+
+
     invalidate();
 }
 
@@ -183,5 +230,54 @@ void AISpeakerPageView::scrollWithAnimation()
     {
         animationCounter = 0;
         animationIsRunning = false;
+    }
+}
+
+void AISpeakerPageView::speedClickHandle(const TextAreaWithOneWildcard &b, const ClickEvent &e)
+{
+    if (e.getType() == ClickEvent::PRESSED) {
+        speedList.setVisible(true);
+        speedContainer.setVisible(true);
+        speedContainer.setTouchable(true);
+        speedList.invalidate();
+        speedContainer.invalidate();
+    }
+}
+
+void AISpeakerPageView::emotionClickHandle(const TextAreaWithOneWildcard &b, const ClickEvent &e)
+{
+    if (e.getType() == ClickEvent::PRESSED) {
+        emotionList.setVisible(true);
+        emotionContainer.setVisible(true);
+        emotionContainer.setTouchable(true);
+        emotionList.invalidate();
+        emotionContainer.invalidate();
+    }
+}
+
+void AISpeakerPageView::chooseElementClicked(chooseElement& element, const int classId, const int chooseId)
+{
+    if (classId == 0) {
+        speedList.setVisible(false);
+        speedContainer.setVisible(false);
+        speedContainer.setTouchable(false);
+        speedList.invalidate();
+        speedContainer.invalidate();
+        nowSettingSpeed = static_cast<ReplySpeed>(chooseId);
+        Unicode::snprintf(speedInstructionBuffer, SPEEDINSTRUCTION_SIZE, "%s",
+            touchgfx::TypedText(speedTextList[chooseId]).getText());
+        speedInstruction.resizeToCurrentText();
+        speedInstruction.invalidate();
+    } else if (classId == 1) {
+        emotionList.setVisible(false);
+        emotionContainer.setVisible(false);
+        emotionContainer.setTouchable(false);
+        emotionList.invalidate();
+        emotionContainer.invalidate();
+        nowSettingEmotion = static_cast<ReplyEmotion>(chooseId);
+        Unicode::snprintf(emotionInstructionBuffer, EMOTIONINSTRUCTION_SIZE, "%s",
+            touchgfx::TypedText(emotionTextList[chooseId]).getText());
+        emotionInstruction.resizeToCurrentText();
+        emotionInstruction.invalidate();
     }
 }

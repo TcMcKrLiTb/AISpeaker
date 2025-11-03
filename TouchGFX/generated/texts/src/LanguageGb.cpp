@@ -42,6 +42,7 @@ KEEP extern const uint32_t indicesGb[] TEXT_LOCATION_FLASH_ATTRIBUTE = {
     32,  // T___SINGLEUSE_DU0S: ""
     81,  // T___SINGLEUSE_L2CQ: "?????<>"
     58,  // T___SINGLEUSE_7XNW: "???????<>"
+    65,  // T___SINGLEUSE_JNHO: "<>"
     144, // T___SINGLEUSE_4L1F: "<> %"
     33,  // T_NEWFILENAME: "000000000000000"
     73,  // T___SINGLEUSE_6WMJ: "??????<>"

@@ -17,6 +17,7 @@
 #include <touchgfx/containers/ListLayout.hpp>
 #include <touchgfx/widgets/TextArea.hpp>
 #include <touchgfx/widgets/TextAreaWithWildcard.hpp>
+#include <touchgfx/mixins/ClickListener.hpp>
 
 class AISpeakerPageViewBase : public touchgfx::View<AISpeakerPagePresenter>
 {
@@ -56,8 +57,12 @@ protected:
     touchgfx::ListLayout dialogList;
     touchgfx::TextArea speedText;
     touchgfx::TextArea emotionText;
-    touchgfx::TextAreaWithOneWildcard speedInstruction;
-    touchgfx::TextAreaWithOneWildcard emotionInstruction;
+    touchgfx::ClickListener< touchgfx::TextAreaWithOneWildcard > speedInstruction;
+    touchgfx::ClickListener< touchgfx::TextAreaWithOneWildcard > emotionInstruction;
+    touchgfx::ScrollableContainer emotionContainer;
+    touchgfx::ListLayout emotionList;
+    touchgfx::ScrollableContainer speedContainer;
+    touchgfx::ListLayout speedList;
 
     /*
      * Wildcard Buffers

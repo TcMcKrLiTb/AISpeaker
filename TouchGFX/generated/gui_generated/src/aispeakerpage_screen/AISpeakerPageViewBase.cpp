@@ -88,6 +88,26 @@ AISpeakerPageViewBase::AISpeakerPageViewBase() :
     emotionInstruction.resizeToCurrentText();
     emotionInstruction.setTypedText(touchgfx::TypedText(T___SINGLEUSE_65SB));
     add(emotionInstruction);
+
+    emotionContainer.setPosition(387, 135, 85, 59);
+    emotionContainer.enableHorizontalScroll(false);
+    emotionContainer.setScrollbarsColor(touchgfx::Color::getColorFromRGB(0, 0, 0));
+    emotionContainer.setScrollbarsAlpha(255);
+    emotionList.setPosition(0, 0, 85, 59);
+    emotionList.setDirection(touchgfx::SOUTH);
+    emotionContainer.add(emotionList);
+
+    add(emotionContainer);
+
+    speedContainer.setPosition(387, 106, 85, 59);
+    speedContainer.enableHorizontalScroll(false);
+    speedContainer.setScrollbarsColor(touchgfx::Color::getColorFromRGB(0, 0, 0));
+    speedContainer.setScrollbarsAlpha(255);
+    speedList.setPosition(0, 0, 85, 59);
+    speedList.setDirection(touchgfx::SOUTH);
+    speedContainer.add(speedList);
+
+    add(speedContainer);
 }
 
 AISpeakerPageViewBase::~AISpeakerPageViewBase()

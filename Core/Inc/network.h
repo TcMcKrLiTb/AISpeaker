@@ -23,6 +23,20 @@ typedef enum {
     STATE_ERROR
 } ProcesserState;
 
+typedef enum {
+    SPEED_NORMAL = 0,
+    SPEED_FAST,
+    SPEED_SLOW,
+    SPEED_MAX_NUM
+} ReplySpeed;
+
+typedef enum {
+    EMOTION_MIDDLE = 0,
+    EMOTION_HAPPY,
+    EMOTION_SAD,
+    EMOTION_SERIOUS,
+    EMOTION_MAX_NUM
+} ReplyEmotion;
 
 void startFileSending(void);
 void startPostRequest(void);

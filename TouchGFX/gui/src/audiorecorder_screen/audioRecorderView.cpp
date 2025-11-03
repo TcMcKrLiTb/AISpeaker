@@ -17,13 +17,10 @@ extern AUDIO_PLAYBACK_StateTypeDef audio_state;
 extern osSemaphoreId stopRecordSemHandle;
 extern osSemaphoreId saveFiniSemHandle;
 extern osThreadId audioFillerTaskHandle;
-
 #endif
 
 audioRecorderView::audioRecorderView()
-{
-
-}
+= default;
 
 void audioRecorderView::setupScreen()
 {

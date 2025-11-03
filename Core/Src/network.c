@@ -30,6 +30,8 @@ __IO bool gNetworkFinished = false;
 uint8_t next[50]; // to hold the next info of pattern string
 uint32_t nowFileSize = 0;
 uint16_t AIRepliedFileNum = 0;
+ReplySpeed nowSettingSpeed = SPEED_NORMAL;
+ReplyEmotion nowSettingEmotion = EMOTION_MIDDLE;
 ALIGN_32BYTES(uint8_t streamDecodeBuffer[BASE_STREAM_BUFFER_SIZE]);
 ALIGN_32BYTES(uint8_t streamBuffer[STREAM_BUFFER_SIZE]);
 
@@ -50,17 +52,30 @@ static const char b64_inverse_table[] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
+static const char *EmotionString[] = {
+    "",
+    "开心地",
+    "悲伤地",
+    "严肃地"
+};
+
+static const char *SpeedString[] = {
+    "",
+    "快速地",
+    "慢慢地"
+};
+
 extern uint16_t SavedFileNum;
 extern osSemaphoreId networkFiniSemHandle;
 
 static int base64_encode(const uint8_t *in, size_t in_len, char *out, size_t out_size)
 {
-    size_t needed = 4 * ((in_len + 2) / 3);
+    const size_t needed = 4 * ((in_len + 2) / 3);
     if (out_size < needed) return -1;
 
     size_t i = 0, o = 0;
     while (i + 2 < in_len) {
-        uint32_t triple = (in[i] << 16) | (in[i+1] << 8) | in[i+2];
+        const uint32_t triple = (in[i] << 16) | (in[i+1] << 8) | in[i+2];
         out[o++] = b64_table[(triple >> 18) & 0x3F];
         out[o++] = b64_table[(triple >> 12) & 0x3F];
         out[o++] = b64_table[(triple >> 6)  & 0x3F];
@@ -69,9 +84,9 @@ static int base64_encode(const uint8_t *in, size_t in_len, char *out, size_t out
     }
     // process 1 or 2 remaining bytes
     if (i < in_len) {
-        uint8_t a = in[i];
-        uint8_t b = (i + 1 < in_len) ? in[i+1] : 0;
-        uint32_t triple = (a << 16) | (b << 8);
+        const uint8_t a = in[i];
+        const uint8_t b = (i + 1 < in_len) ? in[i+1] : 0;
+        const uint32_t triple = (a << 16) | (b << 8);
 
         out[o++] = b64_table[(triple >> 18) & 0x3F];
         out[o++] = b64_table[(triple >> 12) & 0x3F];
@@ -664,15 +679,14 @@ int8_t processResponse(const int sock)
 void doSendAudioToZhiPuServer()
 {
     ip_addr_t ipAddr;
-    ip_addr_t *dnsServerAddr;
-    err_t err;
     char fileName[40];
+    char descStr[100];
 
     printf("post Request\r\n");
 
     dns_init();
 
-    dnsServerAddr = (ip_addr_t *) dns_getserver(0);
+    ip_addr_t *dnsServerAddr = (ip_addr_t *) dns_getserver(0);
 
     printf("dns Server ip: %s\r\n", dnsServerAddr ? ipaddr_ntoa(dnsServerAddr) : "NULL");
 
@@ -686,7 +700,7 @@ void doSendAudioToZhiPuServer()
     }
 
     dnsFinished = 0;
-    err = dns_gethostbyname("open.bigmodel.cn", &ipAddr, myDNSFountCallback, NULL);
+    err_t err = dns_gethostbyname("open.bigmodel.cn", &ipAddr, myDNSFountCallback, NULL);
 
     if (err == ERR_INPROGRESS) {
         while (!dnsFinished) {
@@ -702,13 +716,29 @@ void doSendAudioToZhiPuServer()
 
     printf("Resolved IP: %s\r\n", ipaddr_ntoa(&ipAddr));
 
-    const char *path = "/api/paas/v4/chat/completions";
-    const char *json_body_part1 = "{\"model\":\"glm-4-voice\",\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"input_audio\",\"input_audio\":{\"data\":\"";
-    const char *json_body_part2 = "\",\"format\":\"wav\"}}]}]}";
-    const size_t body_length = strlen(json_body_part1) + strlen(json_body_part2) + 4 * (int) ceil((double) nowFileSize / 3);
+    uint16_t descLen = 0;
 
-    char request_buffer[512];
-    const int header_len = snprintf(request_buffer, sizeof(request_buffer),
+    if (nowSettingEmotion && nowSettingSpeed) {
+        descLen = snprintf(descStr, 100, "请用%s的语气和%s的语速说", EmotionString[nowSettingEmotion],
+            SpeedString[nowSettingSpeed]);
+    } else if (nowSettingSpeed) {
+        descLen = snprintf(descStr, 100, "请用%s的语速说", SpeedString[nowSettingSpeed]);
+    } else if (nowSettingEmotion) {
+        descLen = snprintf(descStr, 100, "请用%s的语气说", EmotionString[nowSettingEmotion]);
+    } else {
+        descLen = snprintf(descStr, 100, "请用正常语气发音清晰");
+    }
+
+    printf("now prompt is: %s\r\n", descStr);
+
+    const char *path = "/api/paas/v4/chat/completions";
+    const char *json_body_part1 = "{\"model\":\"glm-4-voice\",\"messages\":[{\"role\":\"system\",\"content\":\"";
+    const char *json_body_part1_1 = "\"},{\"role\":\"user\",\"content\":[{\"type\":\"input_audio\",\"input_audio\":{\"data\":\"";
+    const char *json_body_part2 = "\",\"format\":\"wav\"}}]}]}";
+    const size_t body_length = strlen(json_body_part1) + strlen(json_body_part1_1) + strlen(json_body_part2) +
+        descLen + 4 * (int) ceil((double) nowFileSize / 3);
+
+    const int header_len = snprintf((char*)streamBuffer, sizeof(streamBuffer),
                               "POST %s HTTP/1.1\r\n"
                               "Host: open.bigmodel.cn\r\n"
                               "User-Agent: STM32F746-AISpeaker(Created by ZSX,LSP)\r\n"
@@ -720,23 +750,29 @@ void doSendAudioToZhiPuServer()
                               "\r\n",
                               path, body_length);
 
-    if (header_len < 0 || header_len >= (int) sizeof(request_buffer)) {
+    if (header_len < 0 || header_len >= (int) sizeof(streamBuffer)) {
         printf("wrong header length\r\n");
         return;
     }
 
     const int sock = connect_with_timeout(ipaddr_ntoa(&ipAddr), 80, 3000);
 
-    send_all(sock, request_buffer, header_len);
+    send_all(sock, streamBuffer, header_len);
+
+    printf("sending body part is:\r\n%s%s%s\r\n\r\n", json_body_part1, descStr, json_body_part1_1);
 
     // send body part1
     send_all(sock, json_body_part1, strlen(json_body_part1));
+    // send system prompt
+    send_all(sock, descStr, descLen);
+    // send body part1_1
+    send_all(sock, json_body_part1_1, strlen(json_body_part1_1));
 
     // send audio data in base64
     snprintf(fileName, 40, "/Audio/RECORDED%d.WAV", SavedFileNum);
     printf("now file name: %s\r\n", fileName);
 
-    send_file_base64_over_socket(sock, fileName, request_buffer, sizeof(request_buffer));
+    send_file_base64_over_socket(sock, fileName, (char*)streamBuffer, sizeof(streamBuffer));
 
     // send body part2
     send_all(sock, json_body_part2, strlen(json_body_part2));
