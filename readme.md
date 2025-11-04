@@ -1,0 +1,2 @@
+项目使用cmake生成代码，clone之后请先使用cubeMX重新生成代码，随后打开touchgfx工程，重新生成代码，如果使用clion等cmake工具链可以直接编译生成，如果使用keil或iar，请根据.ld文件配置资源分配文件。
+烧录请使用cubeProgrammer或stlink的下载软件，否则无法将资源成功下载在外部flash中
