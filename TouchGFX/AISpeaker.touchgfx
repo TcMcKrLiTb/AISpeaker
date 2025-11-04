@@ -98,8 +98,8 @@
             "Name": "textArea2",
             "X": 337,
             "Y": 93,
-            "Width": 81,
-            "Height": 35,
+            "Width": 90,
+            "Height": 34,
             "TextId": "__SingleUse_VC3R",
             "TextRotation": "0",
             "Color": {
@@ -223,8 +223,8 @@
             "Name": "titleText",
             "X": 173,
             "Y": 10,
-            "Width": 135,
-            "Height": 35,
+            "Width": 150,
+            "Height": 34,
             "TextId": "__SingleUse_RJSE",
             "TextRotation": "0",
             "Color": {
