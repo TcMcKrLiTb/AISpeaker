@@ -25,7 +25,7 @@ protected:
 
 private:
     // use to specify which file is referred by this element
-    int fileId = 0;
+    int fileId;
 };
 
 #endif // WAVFILEELEMENT_HPP

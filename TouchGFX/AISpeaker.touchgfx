@@ -240,7 +240,7 @@
             "X": 59,
             "Y": 105,
             "Width": 120,
-            "Height": 18,
+            "Height": 19,
             "TextId": "__SingleUse_Z5TA",
             "TextRotation": "0",
             "AutoSize": true,
@@ -256,7 +256,7 @@
             "X": 183,
             "Y": 105,
             "Width": 88,
-            "Height": 18,
+            "Height": 19,
             "TextId": "__SingleUse_IV1Y",
             "TextRotation": "0",
             "AutoSize": true,
@@ -519,8 +519,8 @@
             "Name": "firstFileText",
             "X": 72,
             "Y": 89,
-            "Width": 206,
-            "Height": 24,
+            "Width": 126,
+            "Height": 29,
             "TextId": "__SingleUse_7XNW",
             "TextRotation": "0",
             "AutoSize": true,
@@ -536,7 +536,7 @@
             "X": 72,
             "Y": 136,
             "Width": 90,
-            "Height": 24,
+            "Height": 29,
             "TextId": "__SingleUse_L2CQ",
             "TextRotation": "0",
             "AutoSize": true,
@@ -547,6 +547,286 @@
           }
         ],
         "Interactions": []
+      },
+      {
+        "Name": "EthernetTester",
+        "Components": [
+          {
+            "Type": "Image",
+            "Name": "image1",
+            "Width": 480,
+            "Height": 272,
+            "RelativeFilename": "__generated\\clay_theme_images_backgrounds_480x272_rays.png"
+          },
+          {
+            "Type": "Button",
+            "Name": "button1",
+            "X": 120,
+            "Y": 111,
+            "Width": 240,
+            "Height": 50,
+            "Pressed": "__generated\\alternate_theme_images_widgets_button_regular_height_50_medium_rounded_pressed.png",
+            "Released": "__generated\\alternate_theme_images_widgets_button_regular_height_50_medium_rounded_normal.png",
+            "Preset": "alternate_theme\\presets\\button\\regular\\height_50\\medium_rounded_normal.json"
+          }
+        ],
+        "Interactions": [
+          {
+            "InteractionName": "Interaction1",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "button1"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "function1"
+            }
+          }
+        ]
+      },
+      {
+        "Name": "AISpeakerPage",
+        "Components": [
+          {
+            "Type": "Image",
+            "Name": "image1",
+            "Width": 480,
+            "Height": 272,
+            "RelativeFilename": "__generated\\light_theme_images_backgrounds_480x272_shady_waves.png"
+          },
+          {
+            "Type": "ButtonWithIcon",
+            "Name": "startTalkButton",
+            "X": 364,
+            "Y": 29,
+            "Width": 60,
+            "Height": 60,
+            "Pressed": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_pressed.png",
+            "Released": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_normal.png",
+            "IconPressed": "__generated\\icon_theme_images_action_done_40_40_E8F6FB.svg.png",
+            "IconReleased": "__generated\\icon_theme_images_av_mic_40_40_E8F6FB.svg.png",
+            "IconX": 10,
+            "IconY": 10,
+            "IconHeight": 40,
+            "IconWidth": 40,
+            "Preset": "light_theme\\presets\\button\\icon\\rounded\\tiny_fill_normal.json"
+          },
+          {
+            "Type": "ButtonWithIcon",
+            "Name": "stopTalkButton",
+            "X": 364,
+            "Y": 29,
+            "Width": 60,
+            "Height": 60,
+            "Pressed": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_pressed.png",
+            "Released": "__generated\\light_theme_images_widgets_button_icon_rounded_tiny_fill_normal.png",
+            "IconPressed": "__generated\\icon_theme_images_action_done_40_40_E8F6FB.svg.png",
+            "IconReleased": "__generated\\icon_theme_images_av_stop_circle_40_40_E8F6FB.svg.png",
+            "IconX": 10,
+            "IconY": 10,
+            "IconHeight": 40,
+            "IconWidth": 40,
+            "Preset": "light_theme\\presets\\button\\icon\\rounded\\tiny_fill_normal.json"
+          },
+          {
+            "Type": "AnimatedImage",
+            "Name": "animatedImage1",
+            "X": 362,
+            "Y": 165,
+            "Width": 64,
+            "Height": 64,
+            "FileNameFirst": "loading\\frame1.png",
+            "FileNameLast": "loading\\frame8.png",
+            "UpdateTicksInterval": 80,
+            "StartOnLoad": true,
+            "LoopEnabled": true
+          },
+          {
+            "Type": "TextProgress",
+            "Name": "textProgress1",
+            "X": 345,
+            "Y": 229,
+            "Width": 175,
+            "Height": 50,
+            "TextId": "__SingleUse_4L1F",
+            "Color": {
+              "Red": 12,
+              "Green": 27,
+              "Blue": 55
+            },
+            "FileNameBackground": "__generated\\alternate_theme_images_widgets_button_regular_height_36_tiny_rounded_inactive.png",
+            "IndicatorPositionY": 5,
+            "IndicatorPositionWidth": 100,
+            "IndicatorPositionHeight": 30,
+            "ProgressRangeMax": 100,
+            "ProgressInitialValue": 60
+          },
+          {
+            "Type": "ScalableImage",
+            "Name": "dialogBackground",
+            "X": 34,
+            "Y": 23,
+            "Width": 280,
+            "Height": 230,
+            "Filename": "__generated\\alternate_theme_images_containers_large_narrow_outlined_light.png",
+            "ScalingAlgorithm": "Nearest-neighbor"
+          },
+          {
+            "Type": "ScrollableContainer",
+            "Name": "dialogContainer",
+            "X": 34,
+            "Y": 27,
+            "Width": 275,
+            "Height": 221,
+            "VerticalScrollEnabled": true,
+            "ScrollbarsVisibleOnPressed": true,
+            "ScrollbarsColor": {
+              "Green": 42,
+              "Blue": 255
+            },
+            "ScrollbarsAlpha": 255,
+            "Components": [
+              {
+                "Type": "ListLayout",
+                "Name": "dialogList",
+                "Width": 250,
+                "Height": 250,
+                "Direction": "South",
+                "Components": []
+              }
+            ]
+          },
+          {
+            "Type": "TextArea",
+            "Name": "speedText",
+            "X": 325,
+            "Y": 106,
+            "Width": 45,
+            "Height": 19,
+            "TextId": "__SingleUse_ZA30",
+            "TextRotation": "0",
+            "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "emotionText",
+            "X": 325,
+            "Y": 136,
+            "Width": 45,
+            "Height": 19,
+            "TextId": "__SingleUse_2LDR",
+            "TextRotation": "0",
+            "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "speedInstruction",
+            "X": 387,
+            "Y": 106,
+            "Width": 104,
+            "Height": 19,
+            "TextId": "__SingleUse_C9G6",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 3,
+              "Green": 24,
+              "Blue": 255
+            },
+            "AutoSize": true,
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 10
+            },
+            "Clickable": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "emotionInstruction",
+            "X": 387,
+            "Y": 136,
+            "Width": 18,
+            "Height": 19,
+            "TextId": "__SingleUse_65SB",
+            "TextRotation": "0",
+            "Color": {
+              "Red": 12,
+              "Green": 166,
+              "Blue": 7
+            },
+            "AutoSize": true,
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 10
+            },
+            "Clickable": true
+          },
+          {
+            "Type": "ScrollableContainer",
+            "Name": "emotionContainer",
+            "X": 387,
+            "Y": 135,
+            "Width": 85,
+            "Height": 59,
+            "VerticalScrollEnabled": true,
+            "ScrollbarsVisibleOnPressed": true,
+            "ScrollbarsAlpha": 255,
+            "Components": [
+              {
+                "Type": "ListLayout",
+                "Name": "emotionList",
+                "Width": 85,
+                "Height": 59,
+                "Direction": "South",
+                "Components": []
+              }
+            ]
+          },
+          {
+            "Type": "ScrollableContainer",
+            "Name": "speedContainer",
+            "X": 387,
+            "Y": 106,
+            "Width": 85,
+            "Height": 59,
+            "VerticalScrollEnabled": true,
+            "ScrollbarsVisibleOnPressed": true,
+            "ScrollbarsAlpha": 255,
+            "Components": [
+              {
+                "Type": "ListLayout",
+                "Name": "speedList",
+                "Width": 85,
+                "Height": 59,
+                "Direction": "South",
+                "Components": []
+              }
+            ]
+          }
+        ],
+        "Interactions": [
+          {
+            "InteractionName": "startTalkInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "startTalkButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "startTalk"
+            }
+          },
+          {
+            "InteractionName": "stopTalkInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "stopTalkButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "stopTalk"
+            }
+          }
+        ]
       }
     ],
     "CustomContainerDefinitions": [
@@ -616,6 +896,127 @@
             }
           }
         ]
+      },
+      {
+        "Name": "dialogElement",
+        "Width": 275,
+        "Height": 272,
+        "Components": [
+          {
+            "Type": "BoxWithBorder",
+            "Name": "boxWithBorder1",
+            "X": 43,
+            "Y": 4,
+            "Width": 232,
+            "Height": 265,
+            "Color": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            },
+            "BorderSize": 3
+          },
+          {
+            "Type": "TextArea",
+            "Name": "dialogInfo",
+            "X": 51,
+            "Y": 10,
+            "Width": 217,
+            "Height": 252,
+            "TextId": "__SingleUse_5D3G",
+            "TextRotation": "0",
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 1000
+            }
+          }
+        ],
+        "Interactions": []
+      },
+      {
+        "Name": "chooseElement",
+        "Width": 85,
+        "Height": 20,
+        "Components": [
+          {
+            "Type": "BoxWithBorder",
+            "Name": "chooseFrame",
+            "Width": 85,
+            "Height": 20,
+            "Color": {
+              "Red": 255,
+              "Green": 255,
+              "Blue": 255
+            },
+            "BorderColor": {
+              "Green": 74,
+              "Blue": 153
+            },
+            "BorderSize": 1
+          },
+          {
+            "Type": "TextArea",
+            "Name": "chooseInfo",
+            "Width": 85,
+            "Height": 20,
+            "TextId": "__SingleUse_JNHO",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "UseBuffer": true,
+              "BufferSize": 10
+            }
+          },
+          {
+            "Type": "FlexButton",
+            "Name": "selectButton",
+            "Width": 85,
+            "Height": 20,
+            "Alpha": 43,
+            "ButtonTrigger": {
+              "Type": "ClickButtonTrigger"
+            },
+            "ButtonStyles": [
+              {
+                "Type": "BoxWithBorderButtonStyle",
+                "Width": 85,
+                "Height": 20,
+                "LockToFlexButtonSize": true,
+                "BorderSize": 1,
+                "ColorReleased": {
+                  "Green": 102,
+                  "Blue": 153
+                },
+                "ColorPressed": {
+                  "Green": 153,
+                  "Blue": 204
+                },
+                "ColorBorderReleased": {
+                  "Green": 51,
+                  "Blue": 102
+                },
+                "ColorBorderPressed": {
+                  "Red": 51,
+                  "Green": 102,
+                  "Blue": 153
+                }
+              }
+            ]
+          }
+        ],
+        "Interactions": [
+          {
+            "InteractionName": "selectInter",
+            "Trigger": {
+              "Type": "TriggerClicked",
+              "TriggerComponent": "selectButton"
+            },
+            "Action": {
+              "Type": "ActionCustom",
+              "FunctionName": "selectAction"
+            }
+          }
+        ]
       }
     ],
     "Name": "AISpeaker",
@@ -624,7 +1025,7 @@
       "Height": 272
     },
     "SelectedColorDepth": 16,
-    "StartupScreenName": "audioRecorder",
+    "StartupScreenName": "AISpeakerPage",
     "SelectedStartupLanguage": "GB",
     "TouchGfxPath": "../Middlewares/ST/touchgfx",
     "UIPath": ".",
@@ -680,8 +1081,7 @@
     "OptionalComponents": [],
     "AdditionalFeatures": [
       "CWRVector",
-      "VectorFonts",
-      "Video"
+      "VectorFonts"
     ]
   },
   "Version": "4.26.0"

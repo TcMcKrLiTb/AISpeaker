@@ -2,7 +2,7 @@
 #include <gui/audiorecorder_screen/audioRecorderPresenter.hpp>
 
 audioRecorderPresenter::audioRecorderPresenter(audioRecorderView& v)
-    : view(v)
+        : view(v)
 {
 
 }

@@ -14,15 +14,13 @@
 extern uint16_t SavedFileNum;
 extern uint8_t audio_save_flag;
 extern AUDIO_PLAYBACK_StateTypeDef audio_state;
-extern osSemaphoreId_t stopRecordSemHandle;
-extern osSemaphoreId_t saveFiniSemHandle;
-
+extern osSemaphoreId stopRecordSemHandle;
+extern osSemaphoreId saveFiniSemHandle;
+extern osThreadId audioFillerTaskHandle;
 #endif
 
 audioRecorderView::audioRecorderView()
-{
-
-}
+= default;
 
 void audioRecorderView::setupScreen()
 {
@@ -31,6 +29,8 @@ void audioRecorderView::setupScreen()
     TEXTS initText = T_DEVICEFAILED;
 
 #ifndef SIMULATOR
+    osThreadResume(audioFillerTaskHandle);
+
     if (BSP_AUDIO_IN_Init(DEFAULT_AUDIO_IN_FREQ, DEFAULT_AUDIO_IN_BIT_RESOLUTION,
                           1) == AUDIO_OK) {
         initText = T_DEVICEREADY;
@@ -53,7 +53,7 @@ void audioRecorderView::tearDownScreen()
     audioRecorderViewBase::tearDownScreen();
 
 #ifndef SIMULATOR
-
+    osThreadSuspend(audioFillerTaskHandle);
 #endif
 }
 
@@ -104,8 +104,12 @@ void audioRecorderView::startSaving()
 
 void audioRecorderView::saveCompleted()
 {
+#ifndef SIMULATOR
+    if (audio_save_flag == 0)
+        return;
     audio_save_flag = 0;
     Unicode::snprintf(textArea3Buffer, TEXTAREA3_SIZE, "RECORDED%d.WAV", SavedFileNum);
+#endif
     textArea3.setWildcard(textArea3Buffer);
     textArea3.setVisible(true);
     textArea3.invalidate();

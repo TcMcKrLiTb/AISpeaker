@@ -19,12 +19,18 @@ set(TouchGFX_Include_Dirs
 
 # TouchGFX generated application sources
 set(TouchGFX_Src
+    ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/aispeakerpage_screen/AISpeakerPagePresenter.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/aispeakerpage_screen/AISpeakerPageView.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/audioplayer_screen/audioPlayerPresenter.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/audioplayer_screen/audioPlayerView.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/audiorecorder_screen/audioRecorderPresenter.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/audiorecorder_screen/audioRecorderView.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/common/FrontendApplication.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/containers/WavFileElement.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/containers/chooseElement.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/containers/dialogElement.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/ethernettester_screen/EthernetTesterPresenter.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/ethernettester_screen/EthernetTesterView.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/fatfstester_screen/fatFSTesterPresenter.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/fatfstester_screen/fatFSTesterView.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/gui/src/model/Model.cpp
@@ -51,41 +57,79 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYBlackMythU_30_4bpp_12.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYBlackMythU_30_4bpp_18.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYBlackMythU_30_4bpp_19.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_0.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_10.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_11.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_12.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_13.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_14.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_15.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_16.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_17.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_18.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_19.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_31.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_4.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_6.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_10_4bpp_9.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_0.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_11.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_12.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_13.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_14.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_17.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_18.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_31.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYJiangNanKai_TTF_15_4bpp_9.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYXinHaiXingKaiW_TTF_15_4bpp_0.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYXinHaiXingKaiW_TTF_15_4bpp_10.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYXinHaiXingKaiW_TTF_15_4bpp_11.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYXinHaiXingKaiW_TTF_15_4bpp_12.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYXinHaiXingKaiW_TTF_15_4bpp_13.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYXinHaiXingKaiW_TTF_15_4bpp_16.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYXinHaiXingKaiW_TTF_15_4bpp_18.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_HYXinHaiXingKaiW_TTF_15_4bpp_9.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_verdana_10_4bpp_0.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_verdana_20_4bpp_0.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Font_verdana_40_4bpp_0.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/GeneratedFont.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Kerning_HYBlackMythU_20_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Kerning_HYBlackMythU_30_4bpp.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Kerning_HYJiangNanKai_TTF_10_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Kerning_HYJiangNanKai_TTF_15_4bpp.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Kerning_HYXinHaiXingKaiW_TTF_15_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Kerning_verdana_10_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Kerning_verdana_20_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Kerning_verdana_40_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Table_HYBlackMythU_20_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Table_HYBlackMythU_30_4bpp.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Table_HYJiangNanKai_TTF_10_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Table_HYJiangNanKai_TTF_15_4bpp.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Table_HYXinHaiXingKaiW_TTF_15_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Table_verdana_10_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Table_verdana_20_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/Table_verdana_40_4bpp.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/UnmappedDataFont.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/fonts/src/VectorFontRendererBuffers.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/aispeakerpage_screen/AISpeakerPageViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/audioplayer_screen/audioPlayerViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/audiorecorder_screen/audioRecorderViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/common/FrontendApplicationBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/containers/WavFileElementBase.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/containers/chooseElementBase.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/containers/dialogElementBase.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/ethernettester_screen/EthernetTesterViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/gui_generated/src/fatfstester_screen/fatFSTesterViewBase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/BitmapDatabase.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/SVGDatabase.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_containers_large_narrow_outlined_light.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_36_medium_rounded_normal.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_36_medium_rounded_pressed.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_36_tiny_rounded_inactive.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_50_medium_rounded_normal.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_alternate_theme_images_widgets_button_regular_height_50_medium_rounded_pressed.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_backgrounds_480x272_burly.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_backgrounds_480x272_rays.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_backgrounds_480x272_waves.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_widgets_button_icon_round_tiny_fill_normal.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_widgets_button_icon_round_tiny_fill_pressed.cpp
@@ -97,12 +141,26 @@ set(TouchGFX_Src
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_widgets_button_regular_height_36_tiny_rounded_normal.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_widgets_button_regular_height_36_tiny_rounded_pressed.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_clay_theme_images_widgets_slider_vertical_thick_rounded_dark.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_icon_theme_images_action_done_40_40_E8F6FB.svg.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_icon_theme_images_action_done_50_50_E8F6FB.svg.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_icon_theme_images_av_mic_40_40_E8F6FB.svg.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_icon_theme_images_av_play_arrow_50_50_E8F6FB.svg.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_icon_theme_images_av_stop_circle_40_40_E8F6FB.svg.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_icon_theme_images_av_stop_circle_50_50_E8F6FB.svg.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_icon_theme_images_content_save_50_50_E8F6FB.svg.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_light_theme_images_backgrounds_480x272_shady_waves.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_light_theme_images_widgets_button_icon_rounded_tiny_fill_normal.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/__generated/image_light_theme_images_widgets_button_icon_rounded_tiny_fill_pressed.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/image_clay_theme_slider.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/image_clay_theme_slider_light.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame1.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame2.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame3.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame4.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame5.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame6.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame7.cpp
+    ${CMAKE_SOURCE_DIR}/TouchGFX/generated/images/src/loading/image_frame8.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/texts/src/LanguageGb.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/texts/src/Texts.cpp
     ${CMAKE_SOURCE_DIR}/TouchGFX/generated/texts/src/TypedTextDatabase.cpp

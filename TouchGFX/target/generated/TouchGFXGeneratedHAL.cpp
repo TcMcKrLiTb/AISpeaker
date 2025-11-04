@@ -23,26 +23,6 @@
 
 #include <touchgfx/widgets/canvas/CWRVectorRenderer.hpp>
 
-#include <DoubleBufferedVideoController.hpp>
-
-#include <SoftwareMJPEGDecoder.hpp>
-uint32_t lineBuffer[480];
-
-SoftwareMJPEGDecoder mjpegdecoder1((uint8_t*)lineBuffer);
-
-namespace
-{
-LOCATION_PRAGMA_NOLOAD("Video_RGB_Buffer")
-uint32_t videoRGBBuffer[130560] LOCATION_ATTRIBUTE_NOLOAD("Video_RGB_Buffer");
-DoubleBufferedVideoController<1, 480, 272, 480 * 2U, Bitmap::RGB565> videoController;
-}
-
-//Singleton Factory
-VideoController& VideoController::getInstance()
-{
-    return videoController;
-}
-
 namespace touchgfx
 {
 VectorRenderer* VectorRenderer::getInstance()
@@ -72,13 +52,6 @@ void TouchGFXGeneratedHAL::initialize()
     HAL::initialize();
     registerEventListener(*(Application::getInstance()));
     setFrameBufferStartAddresses((void*)frameBuf, (void*)(frameBuf + sizeof(frameBuf) / (sizeof(uint32_t) * 2)), (void*)0);
-
-    /*
-     * Add software decoder to video controller
-     */
-    videoController.addDecoder(mjpegdecoder1, 0);
-
-    videoController.setRGBBuffer((uint8_t*)videoRGBBuffer, sizeof(videoRGBBuffer));
 }
 
 void TouchGFXGeneratedHAL::configureInterrupts()
@@ -118,7 +91,6 @@ bool TouchGFXGeneratedHAL::beginFrame()
 void TouchGFXGeneratedHAL::endFrame()
 {
     HAL::endFrame();
-    videoController.endFrame();
 }
 
 uint16_t* TouchGFXGeneratedHAL::getTFTFrameBuffer() const
@@ -168,11 +140,6 @@ void TouchGFXGeneratedHAL::FlushCache()
     {
         SCB_CleanInvalidateDCache();
     }
-}
-
-extern "C" void videoTaskFunc(void* argument)
-{
-    videoController.decoderTaskEntry();
 }
 
 extern "C"

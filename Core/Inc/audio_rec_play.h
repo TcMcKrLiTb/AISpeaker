@@ -6,15 +6,17 @@
 
 #define AUDIO_BUFFER_SIZE       4096
 #define AUDIO_DEFAULT_VOLUME    70
+#define FILE_READ_ONCE_BYTES    512
 
-#define AUDIO_BLOCK_SIZE        (65504U)
+#define AUDIO_BLOCK_SIZE        (32768U)
 
 #define I2S_AUDIOFREQ_16K       (16000U)
 
 // make a 1MB buffer
 #define SDRAM_AUDIO_BLOCK_SIZE   ((uint32_t)(2 * 1024U * 1024U))
-// read in 32k at start to cut down delay
+// read in 200k at start to cut down delay
 #define INITIAL_READ_BYTES       ((uint32_t)(200U * 1024U))
+#define EVERYTIME_READ_BYTES     (INITIAL_READ_BYTES / 2)
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +31,7 @@ typedef struct {
     uint32_t fileSize;
     uint32_t dataChunkPos;
     uint32_t dataChunkSize;
+    uint32_t readFileOffset;
 } wavInfo;
 
 typedef enum {

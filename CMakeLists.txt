@@ -35,17 +35,15 @@ enable_language(C CXX ASM)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
+        Core/Src/audio_rec_play.c
         Core/Src/stm32746g_discovery.c
-        Core/Src/stm32746g_discovery_audio.c
-        Core/Src/stm32746g_discovery_qspi.c
+        Core/Src/retarget.c
         Core/Src/stm32746g_discovery_ts.c
+        Core/Src/stm32746g_discovery_audio.c
         Drivers/BSP/Components/wm8994/wm8994.c
         Drivers/BSP/Components/ft5336/ft5336.c
         TouchGFX/target/CortexMMCUInstrumentation.cpp
-        Core/Src/retarget.c
-        Core/Src/audio_rec_play.c
-        Core/Src/stm32746g_discovery_sdram.c
-        Drivers/CMSIS/RTOS2/Template/cmsis_os1.c)
+        Core/Src/network.c)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -65,10 +63,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/Drivers/BSP/Components/ft5336
-    ${CMAKE_SOURCE_DIR}/Drivers/BSP/Components/n25q128a
-    ${CMAKE_SOURCE_DIR}/Drivers/BSP/Components/Common
-    ${CMAKE_SOURCE_DIR}/Drivers/BSP/Components/wm8994
+        ${CMAKE_SOURCE_DIR}/Drivers/BSP/Components/ft5336
+        ${CMAKE_SOURCE_DIR}/Drivers/BSP/Components/n25q128a
+        ${CMAKE_SOURCE_DIR}/Drivers/BSP/Components/Common
+        ${CMAKE_SOURCE_DIR}/Drivers/BSP/Components/wm8994
     # Add user defined include paths
 )
 

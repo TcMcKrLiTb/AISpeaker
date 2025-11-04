@@ -14,7 +14,7 @@ extern wavInfo wavInfoNow;
 extern AUDIO_PLAYBACK_StateTypeDef audio_state;
 extern uint32_t uwPauseEnabledStatus;
 extern uint8_t audio_pause_flag;
-extern osSemaphoreId_t audioSemHandle;
+extern osSemaphoreId audioSemHandle;
 
 #endif
 
@@ -193,8 +193,14 @@ void audioPlayerView::disFileList()
     tempFileList[0].setupFileElement("test1\0", 0);
     tempFileList[1].setupFileElement("test2\0", 1);
     tempFileList[2].setupFileElement("test3\0", 2);
+    tempFileList[3].setupFileElement("test4\0", 3);
+    tempFileList[4].setupFileElement("test5\0", 4);
+    tempFileList[5].setupFileElement("test6\0", 5);
+    tempFileList[6].setupFileElement("test7\0", 6);
+    tempFileList[7].setupFileElement("test8\0", 7);
+    tempFileList[8].setupFileElement("test9\0", 8);
 
-    fileNum = 3;
+    fileNum = 9;
 #endif
 
     for (uint8_t i = 0; i < (fileNum > maxFileNum ? maxFileNum : fileNum); i++)

@@ -22,13 +22,15 @@
 
 /* USER CODE BEGIN STM32TouchController */
 
-#include "ft5336.h"
 #include <STM32TouchController.hpp>
+
+#include "ft5336.h"
 #include <stm32746g_discovery_ts.h>
 
 static TS_DrvTypeDef *tsDriver;
 extern I2C_HandleTypeDef hi2c3;
 static TS_StateTypeDef TS_State;
+
 
 void STM32TouchController::init()
 {

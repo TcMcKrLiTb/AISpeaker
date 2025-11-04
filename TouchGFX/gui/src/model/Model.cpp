@@ -4,28 +4,31 @@
 #ifndef SIMULATOR
 
 #include "main.h"
-#include "cmsis_os2.h"
+#include "cmsis_os.h"
 
-extern osSemaphoreId_t saveFiniSemHandle;
+extern osSemaphoreId saveFiniSemHandle;
+extern osSemaphoreId networkFiniSemHandle;
 
 #endif
 
 Model::Model() : modelListener(0)
 {
-#ifndef SIMULATOR
-    if (osOK == osSemaphoreAcquire(saveFiniSemHandle, 0)) {
-        modelListener->saveCompleted();
-    }
-#endif
+
 }
 
 void Model::tick()
 {
 #ifndef SIMULATOR
     // Saving finished
-    if (osSemaphoreAcquire(saveFiniSemHandle, 0) == osOK) {
+    if (osSemaphoreWait(saveFiniSemHandle, 0) == osOK) {
         if (modelListener) {
             modelListener->saveCompleted();
+        }
+    }
+    // Network task finished
+    if (osSemaphoreWait(networkFiniSemHandle, 0) == osOK) {
+        if (modelListener) {
+            modelListener->networkTaskCompleted();
         }
     }
 #endif

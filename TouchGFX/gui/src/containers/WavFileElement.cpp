@@ -9,7 +9,7 @@ viewCallback(nullptr), fileId(0)
 void WavFileElement::initialize()
 {
     WavFileElementBase::initialize();
-//    fileSelectButton.setTouchable(true);
+    //    fileSelectButton.setTouchable(true);
 }
 
 void WavFileElement::setupFileElement(const char *fileName, int pFileId)

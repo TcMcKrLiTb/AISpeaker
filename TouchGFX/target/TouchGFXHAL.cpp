@@ -23,6 +23,7 @@
 #include <TouchGFXHAL.hpp>
 
 /* USER CODE BEGIN TouchGFXHAL.cpp */
+
 #include <CortexMMCUInstrumentation.hpp>
 #include <touchgfx/hal/OSWrappers.hpp>
 #include <touchgfx/hal/HAL.hpp>
